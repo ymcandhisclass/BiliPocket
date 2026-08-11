@@ -4,7 +4,7 @@ import ".."
 
 Rectangle {
     id: btn
-    width: 36
+    width: Theme.s * 36
     height: Theme.touchMinSize
     radius: Theme.radiusMedium
     color: btnArea.pressed
@@ -25,7 +25,7 @@ Rectangle {
 
     Row {
         anchors.centerIn: parent
-        spacing: 3
+        spacing: Theme.s * 3
 
         Text {
             text: icon

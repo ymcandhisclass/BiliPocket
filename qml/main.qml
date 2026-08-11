@@ -5,8 +5,8 @@ import "components" as Components
 
 Rectangle {
     id: root
-    width: 320
-    height: 170
+    width: parent ? parent.width : 320
+    height: parent ? parent.height : 170
     color: Theme.bgPrimary
     clip: true
 
@@ -693,6 +693,8 @@ Rectangle {
     }
 
     Component.onCompleted: {
-        console.log("=== BiliPlugin Loaded ===", width, "x", height);
+        // 屏幕适配：按实际高度缩放设计稿（2代 320x170→s=1，3代 800x254→s≈1.49）
+        Theme.s = height / Theme.designH
+        console.log("=== BiliPlugin Loaded ===", width, "x", height, "scale=", Theme.s);
     }
 }

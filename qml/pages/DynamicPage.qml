@@ -5,8 +5,8 @@ import ".."
 
 Rectangle {
     id: dynamicPage
-    width: 320
-    height: 170
+    width: parent ? parent.width : 320
+    height: parent ? parent.height : 170
     color: Theme.bgPrimary
     clip: true
 
@@ -78,13 +78,13 @@ Rectangle {
     Components.LoadMoreListView {
         id: dynamicList
         anchors.fill: parent
-        anchors.leftMargin: 6
-        anchors.rightMargin: 6
-        anchors.topMargin: 4
-        anchors.bottomMargin: 4
+        anchors.leftMargin: Theme.s * 6
+        anchors.rightMargin: Theme.s * 6
+        anchors.topMargin: Theme.s * 4
+        anchors.bottomMargin: Theme.s * 4
         model: dynamicModel
         orientation: ListView.Vertical
-        spacing: 5
+        spacing: Theme.s * 5
         // 纵向流：cacheBuffer/displayMargin 需覆盖横向默认值
         cacheBuffer: 360
         displayMarginBeginning: 120
@@ -92,14 +92,14 @@ Rectangle {
 
         header: Item {
             width: dynamicList.width
-            height: 32
+            height: Theme.s * 32
 
             Row {
                 anchors.left: parent.left
-                anchors.leftMargin: 30
+                anchors.leftMargin: Theme.s * 30
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: 6
+                spacing: Theme.s * 6
 
                 Text {
                     id: dynamicTitleText
@@ -113,16 +113,16 @@ Rectangle {
                     MouseArea {
                         id: titleRefreshArea
                         anchors.fill: parent
-                        anchors.margins: -6
+                        anchors.margins: Theme.s * -6
                         enabled: !(dynamicModel && dynamicModel.loading)
                         onClicked: dynamicPage.requestInitial(true)
                     }
                 }
 
                 Rectangle {
-                    height: 15
+                    height: Theme.s * 15
                     width: statusText.implicitWidth + 10
-                    radius: 8
+                    radius: Theme.s * 8
                     anchors.verticalCenter: parent.verticalCenter
                     color: Theme.withAlpha(Theme.primary, 0.12)
                     border.width: 1
@@ -193,11 +193,11 @@ Rectangle {
 
     Rectangle {
         id: backPill
-        width: 24
-        height: 18
+        width: Theme.s * 24
+        height: Theme.s * 18
         x: 5
         y: 5
-        radius: 9
+        radius: Theme.s * 9
         z: 20
         color: backArea.pressed ? Theme.withAlpha(Theme.primary, 0.32) : Theme.withAlpha(Theme.bgSecondary, 0.88)
         border.width: 1
@@ -225,7 +225,7 @@ Rectangle {
         MouseArea {
             id: backArea
             anchors.fill: parent
-            anchors.margins: -5
+            anchors.margins: Theme.s * -5
             onClicked: dynamicPage.backClicked()
         }
 
@@ -237,7 +237,7 @@ Rectangle {
     Column {
         visible: dynamicModel && dynamicModel.count === 0 && !dynamicModel.loading && initialRequested
         anchors.centerIn: parent
-        spacing: 6
+        spacing: Theme.s * 6
         z: 8
 
         Text {
@@ -246,16 +246,16 @@ Rectangle {
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontBody
             anchors.horizontalCenter: parent.horizontalCenter
-            width: 230
+            width: Theme.s * 230
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
             maximumLineCount: 2
         }
 
         Rectangle {
-            width: 48
-            height: 18
-            radius: 9
+            width: Theme.s * 48
+            height: Theme.s * 18
+            radius: Theme.s * 9
             color: retryArea.pressed ? Theme.withAlpha(Theme.primary, 0.28) : Theme.withAlpha(Theme.primary, 0.14)
             border.width: 1
             border.color: Theme.withAlpha(Theme.primary, 0.35)
@@ -271,7 +271,7 @@ Rectangle {
             MouseArea {
                 id: retryArea
                 anchors.fill: parent
-                anchors.margins: -4
+                anchors.margins: Theme.s * -4
                 onClicked: dynamicPage.requestInitial(true)
             }
         }

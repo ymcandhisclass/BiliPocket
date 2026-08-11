@@ -4,7 +4,7 @@ import "../js/ImageUrl.js" as ImageUrl
 
 Item {
     id: card
-    width: 304
+    width: Theme.s * 304
     height: Math.max(76, Math.min(108, contentColumn.implicitHeight + 14))
 
     property string authorName: ""
@@ -69,18 +69,18 @@ Item {
         Column {
             id: contentColumn
             anchors.fill: parent
-            anchors.margins: 6
-            spacing: 3
+            anchors.margins: Theme.s * 6
+            spacing: Theme.s * 3
 
             Row {
                 width: parent.width
-                height: 15
-                spacing: 4
+                height: Theme.s * 15
+                spacing: Theme.s * 4
 
                 Rectangle {
-                    width: 14
-                    height: 14
-                    radius: 7
+                    width: Theme.s * 14
+                    height: Theme.s * 14
+                    radius: Theme.s * 7
                     color: Theme.bgTertiary
                     clip: true
                     Image {
@@ -113,7 +113,7 @@ Item {
                 }
 
                 Text {
-                    width: 88
+                    width: Theme.s * 88
                     anchors.verticalCenter: parent.verticalCenter
                     text: (card.pubAction ? card.pubAction + " · " : "") + card.pubTime
                     color: Theme.textTertiary
@@ -127,11 +127,11 @@ Item {
 
             Row {
                 width: parent.width
-                spacing: 5
+                spacing: Theme.s * 5
 
                 Column {
                     width: parent.width - (mediaBox.visible ? mediaBox.width + parent.spacing : 0)
-                    spacing: 3
+                    spacing: Theme.s * 3
 
                     Text {
                         width: parent.width
@@ -148,7 +148,7 @@ Item {
                     Rectangle {
                         visible: card.isForward && (card.origSummary.length > 0 || card.origTitle.length > 0)
                         width: parent.width
-                        height: 18
+                        height: Theme.s * 18
                         radius: Theme.radiusSmall
                         color: Theme.withAlpha(Theme.bgTertiary, 0.72)
                         border.width: 1
@@ -156,13 +156,13 @@ Item {
 
                         Row {
                             anchors.fill: parent
-                            anchors.margins: 3
-                            spacing: 4
+                            anchors.margins: Theme.s * 3
+                            spacing: Theme.s * 4
                             Rectangle {
                                 visible: card.origCover.length > 0
-                                width: 12
-                                height: 12
-                                radius: 3
+                                width: Theme.s * 12
+                                height: Theme.s * 12
+                                radius: Theme.s * 3
                                 color: Theme.bgSecondary
                                 clip: true
                                 Image {
@@ -187,8 +187,8 @@ Item {
 
                     Row {
                         width: parent.width
-                        height: 12
-                        spacing: 8
+                        height: Theme.s * 12
+                        spacing: Theme.s * 8
                         Text { text: "转 " + card.repostCountText; color: Theme.textTertiary; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSmall }
                         Text { text: "评 " + card.commentCountText; color: Theme.textTertiary; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSmall }
                         Text { text: "赞 " + card.likeCountText; color: Theme.textTertiary; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSmall }
@@ -241,8 +241,8 @@ Item {
                         anchors.bottom: parent.bottom
                         anchors.margins: 2
                         width: durationText.implicitWidth + 6
-                        height: 12
-                        radius: 3
+                        height: Theme.s * 12
+                        radius: Theme.s * 3
                         color: "#CC000000"
                         Text {
                             id: durationText
@@ -261,8 +261,8 @@ Item {
                         anchors.top: parent.top
                         anchors.margins: 2
                         width: typeText.implicitWidth + 6
-                        height: 12
-                        radius: 3
+                        height: Theme.s * 12
+                        radius: Theme.s * 3
                         color: Theme.withAlpha(card.isLive ? Theme.accent : Theme.primary, 0.88)
                         Text {
                             id: typeText

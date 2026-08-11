@@ -6,8 +6,8 @@ import ".."
 
 Rectangle {
     id: rankingPage
-    width: 320
-    height: 170
+    width: parent ? parent.width : 320
+    height: parent ? parent.height : 170
     color: Theme.bgPrimary
 
     property var controller: null
@@ -54,7 +54,7 @@ Rectangle {
     Rectangle {
         id: categoryBar
         width: parent.width
-        height: 24
+        height: Theme.s * 24
         anchors.top: titleBar.bottom
         color: Theme.bgSecondary
 
@@ -85,7 +85,7 @@ Rectangle {
             }
 
             delegate: Rectangle {
-                width: 42; height: 18
+                width: Theme.s * 42; height: Theme.s * 18
                 radius: Theme.radiusRound
                 anchors.verticalCenter: parent.verticalCenter
                 color: categoryBar.selectedRid === rid
@@ -194,7 +194,7 @@ Rectangle {
 
             Text {
                 text: "🏆"
-                font.pixelSize: 18
+                font.pixelSize: Theme.s * 18
                 anchors.horizontalCenter: parent.horizontalCenter
                 opacity: 0.4
             }
