@@ -130,7 +130,7 @@ Item {
         // 封面区 (高度约 65%)
         Rectangle {
             id: coverContainer
-            width: parent.width - 4
+            width: parent.width - Theme.s * 4
             height: parent.height * 0.58
             anchors.top: parent.top
             anchors.topMargin: 2

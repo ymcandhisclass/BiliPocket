@@ -1329,7 +1329,8 @@ Rectangle {
                         }
 
                         Column {
-                            width: parent.width - 90
+                            // 72(封面) + 8(Row spacing) + 余量，需随 s 缩放
+                            width: parent.width - Theme.s * 90
                             spacing: Theme.s * 4
                             anchors.verticalCenter: parent.verticalCenter
 
@@ -1517,7 +1518,7 @@ Rectangle {
                             anchors.right: parent.right
                             anchors.topMargin: Theme.s * 4
                             anchors.rightMargin: Theme.s * 6
-                            width: Math.min(parent.width - 12, searchLabel.implicitWidth + 42)
+                            width: Math.min(parent.width - Theme.s * 12, searchLabel.implicitWidth + Theme.s * 42)
                             height: Theme.s * 22
                             radius: Theme.s * 11
                             color: Theme.withAlpha(Theme.primary, 0.16)
@@ -1534,7 +1535,7 @@ Rectangle {
                                 font.family: Theme.fontFamily
                                 font.pixelSize: Theme.fontSmall
                                 elide: Text.ElideRight
-                                width: parent.width - 32
+                                width: parent.width - Theme.s * 32
                             }
 
                             Canvas {

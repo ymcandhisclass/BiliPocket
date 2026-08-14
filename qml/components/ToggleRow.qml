@@ -11,7 +11,7 @@ Rectangle {
     property var checked: false
     signal toggled(bool value)
 
-    height: description.length > 0 ? 52 : 30
+    height: description.length > 0 ? Theme.s * 52 : Theme.s * 30
     radius: Theme.radiusMedium
     color: Theme.bgSecondary
     border.color: Theme.withAlpha(Theme.primary, 0.12)
@@ -24,7 +24,8 @@ Rectangle {
 
         Column {
             visible: toggleRow.description.length > 0
-            width: parent.width - 112
+            // 两个 44 宽的开关 + 2 段 8 的 spacing + 余量
+            width: parent.width - Theme.s * 112
             spacing: Theme.s * 3
             anchors.verticalCenter: parent.verticalCenter
 

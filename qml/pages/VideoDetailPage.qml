@@ -239,16 +239,18 @@ Rectangle {
         id: topBar
         anchors.top: parent.top
         anchors.left: parent.left
-        width: Theme.s * 52
-        height: Theme.s * 24
+        width: Theme.s * 64
+        // 必须完整包住 backBtn：Qt Quick 不会把事件派发到超出父项边界的子项区域，
+        // topBar 比按钮矮的话，按钮露在外面的那部分是点不到的。
+        height: Theme.s * 30
         z: 5
 
         Rectangle {
             id: backBtn
             anchors.left: parent.left
-            anchors.leftMargin: Theme.s * 18
+            anchors.leftMargin: Theme.s * 26
             anchors.top: parent.top
-            anchors.topMargin: Theme.s * 4
+            anchors.topMargin: Theme.s * 6
             width: Theme.s * 22
             height: Theme.s * 22
             radius: Theme.s * 11
@@ -318,9 +320,11 @@ Rectangle {
             // Hero 区: 封面 + 主信息
             // ─────────────────────────────────────────────
             Item {
-                width: parent.width - 16
+                width: parent.width - Theme.s * 16
                 anchors.horizontalCenter: parent.horizontalCenter
-                height: Math.max(66, heroInfoColumn.implicitHeight + 2)
+                // 封面是 Theme.s * 66，这里的下限必须同步缩放，
+                // 否则 3 代上封面比容器高出一截，直接压到下面的操作行上。
+                height: Math.max(Theme.s * 66, heroInfoColumn.implicitHeight + Theme.s * 2)
 
                 Item {
                     id: heroSkeleton
@@ -373,7 +377,7 @@ Rectangle {
                         anchors.leftMargin: Theme.s * 119
                         anchors.right: parent.right
                         anchors.top: parent.top
-                        anchors.topMargin: 2
+                        anchors.topMargin: Theme.s * 2
                         height: Theme.s * 62
                         paintToken: detailPage.skeletonPaintToken
                         // x/w ≤1 为宽度比例，>1 为绝对像素
@@ -742,9 +746,11 @@ Rectangle {
             // 主操作行: 点赞 · 投币 · 收藏 · 稍后再看
             // ─────────────────────────────────────────────
             Item {
-                width: parent.width - 16
+                // 按钮行限宽居中：宽度跟着 800 走会把 4 个按钮拉成 190px 的长条，
+                // 而高度只跟着 s 走，两个方向不同步。锁到设计宽度后比例与 2 代一致。
+                width: Math.min(parent.width - Theme.s * 16, Theme.contentW)
                 anchors.horizontalCenter: parent.horizontalCenter
-                height: Theme.s * 36
+                height: Theme.sv * 36
 
                 Row {
                     visible: detailPage.detailContentReady && opacity > 0
@@ -817,7 +823,7 @@ Rectangle {
                         model: 4
                         Rectangle {
                             width: (parent.width - parent.spacing * 3) / 4
-                            height: Theme.s * 36
+                            height: Theme.sv * 36
                             radius: Theme.s * 8
                             color: Qt.rgba(1, 1, 1, 0.05)
                             border.color: Qt.rgba(1, 1, 1, 0.08)
@@ -859,9 +865,10 @@ Rectangle {
             // 工具行: 评论 · 下载 · 字幕
             // ─────────────────────────────────────────────
             Item {
-                width: parent.width - 16
+                // 同主操作行：限宽居中，避免 3 个按钮各被拉到 255px
+                width: Math.min(parent.width - Theme.s * 16, Theme.contentW)
                 anchors.horizontalCenter: parent.horizontalCenter
-                height: Theme.s * 24
+                height: Theme.sv * 24
 
                 Row {
                     id: toolRow
@@ -909,7 +916,7 @@ Rectangle {
                         model: 3
                         Rectangle {
                             width: (parent.width - parent.spacing * 2) / 3
-                            height: Theme.s * 24
+                            height: Theme.sv * 24
                             radius: Theme.s * 8
                             color: Qt.rgba(1, 1, 1, 0.05)
                             border.color: Qt.rgba(1, 1, 1, 0.08)
@@ -995,7 +1002,7 @@ Rectangle {
             // 清晰度选择
             // ─────────────────────────────────────────────
             Item {
-                width: parent.width - 16
+                width: parent.width - Theme.s * 16
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: detailPage.detailContentReady ? 24 : 0
                 visible: detailPage.detailContentReady
@@ -1069,7 +1076,7 @@ Rectangle {
                             Rectangle {
                                 id: qualityItem
                                 height: Theme.s * 18
-                                width: Math.max(34, qItemText.implicitWidth + 10)
+                                width: Math.max(Theme.s * 34, qItemText.implicitWidth + Theme.s * 10)
                                 radius: Theme.s * 9
                                 color: detailPage.selectedQuality === modelData
                                        ? primaryColor
@@ -1215,7 +1222,7 @@ Rectangle {
             // ─────────────────────────────────────────────
             Rectangle {
                 id: descCard
-                width: parent.width - 16
+                width: parent.width - Theme.s * 16
                 anchors.horizontalCenter: parent.horizontalCenter
                 radius: Theme.s * 10
                 color: surfaceColor
@@ -1330,7 +1337,7 @@ Rectangle {
                     Flickable {
                         id: descFlick
                         width: parent.width
-                        height: Math.min(descText.implicitHeight, 80)
+                        height: Math.min(descText.implicitHeight, Theme.s * 80)
                         contentHeight: descText.implicitHeight
                         flickableDirection: Flickable.VerticalFlick
                         clip: true
@@ -1355,7 +1362,7 @@ Rectangle {
 
             Rectangle {
                 id: seasonEntryCard
-                width: parent.width - 16
+                width: parent.width - Theme.s * 16
                 anchors.horizontalCenter: parent.horizontalCenter
                 visible: controller && controller.videoSeasonId > 0
                 height: visible ? 42 : 0
@@ -1409,7 +1416,7 @@ Rectangle {
                     }
 
                     Column {
-                        width: parent.width - 60
+                        width: parent.width - Theme.s * 60
                         spacing: Theme.s * 3
                         anchors.verticalCenter: parent.verticalCenter
 
@@ -1464,7 +1471,7 @@ Rectangle {
 
             Column {
                 id: relatedSection
-                width: parent.width - 16
+                width: parent.width - Theme.s * 16
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: Theme.s * 6
                 visible: detailPage.detailContentReady && controller && controller.videoBvid === detailPage.bvid
@@ -1519,7 +1526,7 @@ Rectangle {
                         }
 
                         Column {
-                            width: parent.width - 60
+                            width: parent.width - Theme.s * 60
                             spacing: Theme.s * 3
                             anchors.verticalCenter: parent.verticalCenter
 
@@ -1676,7 +1683,7 @@ Rectangle {
         property color activeColor: "#f472b6"
         signal triggered()
 
-        height: Theme.s * 36
+        height: Theme.sv * 36
         radius: Theme.s * 8
         color: active
                ? Qt.rgba(activeColor.r, activeColor.g, activeColor.b, 0.18)
@@ -1793,7 +1800,7 @@ Rectangle {
         property string label: ""
         signal triggered()
 
-        height: Theme.s * 24
+        height: Theme.sv * 24
         radius: Theme.s * 12
         color: toolArea.pressed ? primaryDark : primaryColor
         scale: toolArea.pressed ? 0.92 : 1.0
@@ -1891,7 +1898,7 @@ Rectangle {
 
         Text {
             anchors.centerIn: parent
-            width: parent.width - 40
+            width: parent.width - Theme.s * 40
             text: controller ? controller.videoTitle : ""
             color: "white"
             font.family: Theme.fontFamily
@@ -1918,7 +1925,7 @@ Rectangle {
 
         Text {
             anchors.centerIn: parent
-            width: parent.width - 40
+            width: parent.width - Theme.s * 40
             text: detailPage.fullPartTitleText
             color: "white"
             font.family: Theme.fontFamily
@@ -1951,8 +1958,8 @@ Rectangle {
         Rectangle {
             id: subtitlePickerDialog
             anchors.centerIn: parent
-            width: Math.min(parent.width - 40, 220)
-            height: Math.min(parent.height - 20, 145)
+            width: Math.min(parent.width - Theme.s * 40, Theme.s * 220)
+            height: Math.min(parent.height - Theme.s * 20, Theme.s * 145)
             radius: Theme.s * 10
             color: Qt.rgba(0.08, 0.1, 0.14, 0.98)
             border.color: Qt.rgba(1, 1, 1, 0.12)
@@ -1985,7 +1992,7 @@ Rectangle {
                 ListView {
                     id: subtitleListDialog
                     width: parent.width
-                    height: parent.height - 30
+                    height: parent.height - Theme.s * 30
                     model: controller ? controller.subtitleList : []
                     clip: true
                     spacing: Theme.s * 4
@@ -2018,7 +2025,7 @@ Rectangle {
 
                             Text {
                                 anchors.centerIn: parent
-                                width: parent.width - 12
+                                width: parent.width - Theme.s * 12
                                 text: "不使用字幕"
                                 color: "white"
                                 font.family: Theme.fontFamily
@@ -2050,7 +2057,7 @@ Rectangle {
 
                         Text {
                             anchors.centerIn: parent
-                            width: parent.width - 12
+                            width: parent.width - Theme.s * 12
                             text: {
                                 var label = modelData.lan_doc || modelData.lan || ("字幕" + (index + 1));
                                 var subtitleId = modelData.subtitleId || modelData.id || 0;
@@ -2246,8 +2253,8 @@ Rectangle {
         Rectangle {
             id: favoritePickerDialog
             anchors.centerIn: parent
-            width: Math.min(parent.width - 40, 220)
-            height: Math.min(parent.height - 20, 145)
+            width: Math.min(parent.width - Theme.s * 40, Theme.s * 220)
+            height: Math.min(parent.height - Theme.s * 20, Theme.s * 145)
             radius: Theme.s * 10
             color: Qt.rgba(0.08, 0.1, 0.14, 0.98)
             border.color: Qt.rgba(1, 1, 1, 0.12)
@@ -2271,7 +2278,7 @@ Rectangle {
                 ListView {
                     id: favoriteFolderListDialog
                     width: parent.width
-                    height: parent.height - 30
+                    height: parent.height - Theme.s * 30
                     model: controller ? controller.favorite.favoriteFolderModel() : null
                     clip: true
                     spacing: Theme.s * 4
@@ -2289,7 +2296,7 @@ Rectangle {
 
                         Text {
                             anchors.centerIn: parent
-                            width: parent.width - 12
+                            width: parent.width - Theme.s * 12
                             text: model.title || "未命名收藏夹"
                             color: "white"
                             font.family: Theme.fontFamily
@@ -2342,7 +2349,7 @@ Rectangle {
 
         Column {
             anchors.centerIn: parent
-            width: parent.width - 80
+            width: parent.width - Theme.s * 80
             spacing: Theme.s * 8
 
             Text {

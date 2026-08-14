@@ -16,6 +16,19 @@ Item {
     readonly property real designW: 320
     readonly property real designH: 170
 
+    // 由 main.qml 一并写入实际屏幕尺寸，供下面的宽屏判定使用。
+    property real screenW: designW
+    property real screenH: designH
+
+    // 3代宽高比 ≈3.15，设计基准 ≈1.88 —— 3代是明显更扁的横条。
+    // 按高度等比放大后纵向吃紧、横向富余，于是分两个方向处理：
+    //   sv       纵向尺寸系数，宽屏下收一档，让竖直堆叠仍放得下一屏
+    //   contentW 单列内容的目标宽度，避免按钮行被拉成极长的条
+    readonly property real aspect: screenH > 0 ? screenW / screenH : designW / designH
+    readonly property bool wide: aspect > (designW / designH) * 1.25
+    property real sv: wide ? s * 0.9 : s
+    readonly property real contentW: (designW - 16) * s
+
     // ── 主题色 ──
     readonly property color primary: "#00A1D6"
     readonly property color primaryLight: "#23ADE5"

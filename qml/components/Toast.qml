@@ -4,7 +4,7 @@ import ".."
 
 Rectangle {
     id: toast
-    width: Math.min(toastText.implicitWidth + 28, parent ? parent.width - 24 : 200)
+    width: Math.min(toastText.implicitWidth + Theme.s * 28, parent ? parent.width - Theme.s * 24 : Theme.s * 200)
     height: Theme.s * 26
     radius: Theme.radiusRound
     color: Theme.withAlpha(Theme.bgTertiary, 0.95)
@@ -26,7 +26,7 @@ Rectangle {
         font.pixelSize: Theme.fontBody
         text: ""
         elide: Text.ElideRight
-        width: parent.width - 20
+        width: parent.width - Theme.s * 20
         horizontalAlignment: Text.AlignHCenter
     }
 

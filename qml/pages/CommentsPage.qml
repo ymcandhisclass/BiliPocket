@@ -435,9 +435,9 @@ Rectangle {
             height: Theme.s * 20
             radius: Theme.s * 10
             anchors.left: parent.left
-            anchors.leftMargin: Theme.s * 18
+            anchors.leftMargin: Theme.s * 26
             anchors.top: parent.top
-            anchors.topMargin: Theme.s * 4
+            anchors.topMargin: Theme.s * 6
             color: backButtonArea.pressed ? Theme.withAlpha(Theme.primary, 0.26) : Theme.withAlpha(_panelFill, 0.88)
             border.color: Theme.withAlpha(Theme.primary, backButtonArea.pressed ? 0.32 : 0.16)
             border.width: 1
@@ -582,7 +582,7 @@ Rectangle {
             property bool liked: !!model.liked
 
             width: commentList.width
-            height: realContentLoader.item ? realContentLoader.item.height + 7 : 69
+            height: realContentLoader.item ? realContentLoader.item.height + Theme.s * 7 : Theme.s * 69
             radius: Theme.s * 12
             color: pinned ? Theme.withAlpha(_cardFillStrong, 0.98) : Theme.withAlpha(_cardFill, 0.98)
             border.color: pinned ? Theme.withAlpha(Theme.primary, 0.34) : Theme.withAlpha(_panelBorder, 0.9)
@@ -633,7 +633,8 @@ Rectangle {
 
                         Column {
                             id: commentBodyColumn
-                            width: parent.width - 28
+                            // 22(头像) + 6(Row spacing)，与左侧兄弟节点同步缩放，否则 3 代上会顶出卡片
+                            width: parent.width - Theme.s * 28
                             spacing: Theme.s * 4
 
                             Row {
@@ -816,7 +817,14 @@ Rectangle {
                                 }
 
                                 Item {
-                                    width: Math.max(0, parent.width - (commentDelegate.cachedPictureUrl ? commentsPage._commentPictureWidth + 6 : 0) - actionButtons.width)
+                                    // 弹性占位，把 actionButtons 顶到最右。
+                                    // 需要扣掉 Row 实际产生的 spacing：配图可见时 3 个子项 2 段，
+                                    // 不可见时（Row 不为隐藏项留位）2 个子项 1 段。
+                                    width: Math.max(0, parent.width
+                                                    - (commentDelegate.cachedPictureUrl
+                                                       ? commentsPage._commentPictureWidth + Theme.s * 6 : 0)
+                                                    - Theme.s * 6
+                                                    - actionButtons.width)
                                     height: 1
                                 }
 
@@ -1069,7 +1077,8 @@ Rectangle {
 
                         Column {
                             id: detailHeaderColumn
-                            width: parent.width - 30
+                            // 24(头像) + 6(Row spacing)
+                            width: parent.width - Theme.s * 30
                             spacing: Theme.s * 4
 
                             Row {
@@ -1130,7 +1139,7 @@ Rectangle {
                                                     - (detailTopTag.visible ? detailTopTag.width : 0)
                                                     - detailTimeText.width
                                                     - detailLikeBadge.width
-                                                    - (detailTopTag.visible ? 20 : 16))
+                                                    - Theme.s * (detailTopTag.visible ? 20 : 16))
                                     height: 1
                                 }
 
@@ -1301,7 +1310,8 @@ Rectangle {
 
                     Column {
                         id: replyContent
-                        width: parent.width - 26
+                        // 20(头像) + 6(Row spacing)
+                        width: parent.width - Theme.s * 26
                         spacing: Theme.s * 4
 
                         Row {

@@ -81,7 +81,7 @@ Rectangle {
             // ── 搜索输入框 ──
             Rectangle {
                 id: searchInputBox
-                width: parent.width - 36 - 52 - 18
+                width: parent.width - Theme.s * 36 - Theme.s * 52 - Theme.s * 18
                 height: Theme.s * 30
                 radius: Theme.s * 15
                 anchors.verticalCenter: parent.verticalCenter
@@ -113,7 +113,7 @@ Rectangle {
                     Text {
                         id: displayText
                         anchors.verticalCenter: parent.verticalCenter
-                        width: parent.width - 30
+                        width: parent.width - Theme.s * 30
                         text: searchInput.text.length > 0
                         ? searchInput.text
                         : "搜索视频、UP主..."

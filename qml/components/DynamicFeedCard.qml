@@ -101,7 +101,7 @@ Item {
                 }
 
                 Text {
-                    width: Math.max(50, parent.width - 112)
+                    width: Math.max(Theme.s * 50, parent.width - Theme.s * 112)
                     anchors.verticalCenter: parent.verticalCenter
                     text: card.authorName || "动态"
                     color: Theme.textPrimary

@@ -13,7 +13,7 @@ Rectangle {
     property string titleSuffix: ""
     property bool showBack: true
     property bool showSearch: false
-    property real titleSideReserve: 55 * Theme.s
+    property real titleSideReserve: 55 * Theme.sv
 
     signal backClicked()
     signal searchClicked()

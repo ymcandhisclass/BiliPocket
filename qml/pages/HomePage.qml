@@ -387,7 +387,7 @@ Rectangle {
         }
 
         Row {
-            width: parent.width - 16
+            width: parent.width - Theme.s * 16
             anchors.centerIn: parent
             spacing: Theme.s * 4
 

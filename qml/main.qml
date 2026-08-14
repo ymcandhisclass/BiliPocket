@@ -694,7 +694,10 @@ Rectangle {
 
     Component.onCompleted: {
         // 屏幕适配：按实际高度缩放设计稿（2代 320x170→s=1，3代 800x254→s≈1.49）
+        Theme.screenW = width
+        Theme.screenH = height
         Theme.s = height / Theme.designH
-        console.log("=== BiliPlugin Loaded ===", width, "x", height, "scale=", Theme.s);
+        console.log("=== BiliPlugin Loaded ===", width, "x", height,
+                    "scale=", Theme.s, "sv=", Theme.sv, "wide=", Theme.wide);
     }
 }

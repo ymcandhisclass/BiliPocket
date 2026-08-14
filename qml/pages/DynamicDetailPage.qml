@@ -164,7 +164,8 @@ Rectangle {
                 }
 
                 Column {
-                    width: parent.width - 28
+                    // 22(头像) + 6(Row spacing)
+                    width: parent.width - Theme.s * 28
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 1
 

@@ -527,7 +527,8 @@ Rectangle {
 
                 Column {
                     id: infoColumn
-                    width: parent.width - 96
+                    // 64(头像) + spacing + 余量，需随 s 缩放
+                    width: parent.width - Theme.s * 96
                     spacing: Theme.spacingSmall
                     anchors.verticalCenter: parent.verticalCenter
 
@@ -638,7 +639,7 @@ Rectangle {
                             Text {
                                 id: officialBadgeText
                                 anchors.centerIn: parent
-                                width: parent.width - 8
+                                width: parent.width - Theme.s * 8
                                 text: controller ? controller.upOfficialLabel : ""
                                 color: Theme.primaryLight
                                 font.family: Theme.fontFamily
@@ -661,7 +662,7 @@ Rectangle {
                             Text {
                                 id: vipBadgeText
                                 anchors.centerIn: parent
-                                width: parent.width - 8
+                                width: parent.width - Theme.s * 8
                                 text: controller ? controller.upVipLabel : ""
                                 color: "#FB7299"
                                 font.family: Theme.fontFamily
@@ -684,7 +685,7 @@ Rectangle {
                             Text {
                                 id: medalBadgeText
                                 anchors.centerIn: parent
-                                width: parent.width - 8
+                                width: parent.width - Theme.s * 8
                                 text: upPage.upFansMedalLabel()
                                 color: Theme.warning
                                 font.family: Theme.fontFamily
@@ -1548,7 +1549,7 @@ Rectangle {
                 }
 
                 Components.SkeletonPill {
-                    width: parent.width - 96
+                    width: parent.width - Theme.s * 96
                     height: Theme.s * 58
                     anchors.verticalCenter: parent.verticalCenter
                     paintToken: upPage.skeletonPaintToken
