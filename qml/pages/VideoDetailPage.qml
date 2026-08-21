@@ -1078,12 +1078,13 @@ Rectangle {
                                 height: Theme.s * 18
                                 width: Math.max(Theme.s * 34, qItemText.implicitWidth + Theme.s * 10)
                                 radius: Theme.s * 9
+                                // 选中项使用半透明主题色背景（与首页导航底栏选中态一致），替代实心填充
                                 color: detailPage.selectedQuality === modelData
-                                       ? primaryColor
+                                       ? Theme.withAlpha(primaryColor, 0.15)
                                        : Qt.rgba(1, 1, 1, 0.06)
                                 border.width: 1
                                 border.color: detailPage.selectedQuality === modelData
-                                               ? primaryLight
+                                               ? Theme.withAlpha(primaryLight, 0.4)
                                                : Qt.rgba(1, 1, 1, 0.1)
 
                                 scale: qualityArea.pressed ? 0.9 : 1.0
@@ -1095,7 +1096,7 @@ Rectangle {
                                     anchors.centerIn: parent
                                     text: qualityLabel(modelData)
                                     color: detailPage.selectedQuality === modelData
-                                           ? "white"
+                                           ? primaryLight
                                            : "#cbd5e1"
                                     font.family: Theme.fontFamily
                                     font.pixelSize: Theme.s * 9
