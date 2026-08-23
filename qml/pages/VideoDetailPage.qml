@@ -1705,8 +1705,9 @@ Rectangle {
 
             Canvas {
                 id: actIcon
-                width: 14
-                height: 14
+                // 图标随文本一起按 s 缩放（不能沿用固定 14px：3代宽屏下会显得比字号小一圈，像错位）
+                width: Theme.s * 14
+                height: Theme.s * 14
                 anchors.horizontalCenter: parent.horizontalCenter
                 property bool _active: actionBtn.active
                 property color _activeColor: actionBtn.activeColor
@@ -1739,6 +1740,8 @@ Rectangle {
                         ctx.stroke()
                         ctx.restore()
                     } else if (_type === "coin") {
+                        // 14 单位设计坐标 → 按画布实际尺寸缩放到 Theme.s 倍
+                        ctx.scale(width / 14, height / 14)
                         ctx.strokeStyle = col
                         ctx.lineWidth = 1.4
                         ctx.beginPath()
@@ -1748,6 +1751,7 @@ Rectangle {
                         ctx.arc(7, 7, 3, 0, Math.PI * 2)
                         ctx.stroke()
                     } else if (_type === "star") {
+                        ctx.scale(width / 14, height / 14)
                         ctx.fillStyle = col
                         ctx.beginPath()
                         var cx = 7, cy = 7, outerR = 6.5, innerR = 2.6
@@ -1761,6 +1765,7 @@ Rectangle {
                         ctx.closePath()
                         ctx.fill()
                     } else if (_type === "watchlater") {
+                        ctx.scale(width / 14, height / 14)
                         ctx.strokeStyle = col
                         ctx.lineWidth = 1.4
                         ctx.lineCap = "round"
@@ -1813,14 +1818,16 @@ Rectangle {
             spacing: Theme.s * 4
 
             Canvas {
-                width: 11
-                height: 11
+                width: Theme.s * 11
+                height: Theme.s * 11
                 anchors.verticalCenter: parent.verticalCenter
                 property string _type: toolBtn.iconType
 
                 onPaint: {
                     var ctx = getContext("2d")
                     ctx.clearRect(0, 0, width, height)
+                    // 工具行图标同样按 s 缩放，与 ActionButton 图标一致
+                    ctx.scale(width / 11, height / 11)
                     ctx.strokeStyle = "white"
                     ctx.fillStyle = "white"
                     ctx.lineWidth = 1.2
@@ -2399,13 +2406,14 @@ Rectangle {
                     spacing: Theme.s * 4
 
                     Canvas {
-                        width: 11
-                        height: 11
+                        width: Theme.s * 11
+                        height: Theme.s * 11
                         anchors.verticalCenter: parent.verticalCenter
                         onPaint: {
                             var ctx = getContext("2d");
                             ctx.clearRect(0, 0, width, height);
-                            // 停止图标（方块）
+                            // 停止图标（方块），按 s 缩放
+                            ctx.scale(width / 11, height / 11);
                             ctx.fillStyle = "white";
                             ctx.beginPath();
                             ctx.rect(1.5, 1.5, 8, 8);
