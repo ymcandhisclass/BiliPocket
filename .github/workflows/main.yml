@@ -1,0 +1,98 @@
+name: Build BiliPocket Plugin
+
+on:
+  push:
+    branches: [ "YDP03X", "main" ]
+  pull_request:
+    branches: [ "YDP03X", "main" ]
+  # 允许手动触发
+  workflow_dispatch:
+
+env:
+  # 交叉编译目标
+  TARGET_ARCH: arm64-v8a
+  TARGET_TRIPLE: aarch64-linux-gnu
+  # Go 编译环境
+  GOOS: linux
+  GOARCH: arm64
+  CGO_ENABLED: 0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ----- 安装依赖 -----
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            file \
+            unzip \
+            wget \
+            cmake \
+            ninja-build \
+            pkg-config
+
+      # ----- 安装 Go -----
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      # ----- 安装 xmake -----
+      - name: Setup xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: 'v3.0.9'
+
+      # ----- 安装 Zig（用于交叉编译工具链）-----
+      - name: Install Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: '0.11.0'
+
+      # ----- 安装 aarch64 Qt（预编译）-----
+      - name: Install aarch64 Qt
+        run: |
+          wget -q https://github.com/Redbeanw44602/aarch64-linux-qt-5.15.2/releases/download/continuous/qt-5.15.2-aarch64-linux-gnu.tar.xz
+          tar -xf qt-5.15.2-aarch64-linux-gnu.tar.xz -C $HOME
+          echo "QT_DIR=$HOME/qt-5.15.2-aarch64-linux-gnu" >> $GITHUB_ENV
+
+      # ----- 编译 C++ 插件 -----
+      - name: Build libbili_plugin.so
+        run: |
+          xmake f -c \
+            --qt="$QT_DIR" \
+            --arch=${{ env.TARGET_ARCH }} \
+            --toolchain=zigcc \
+            --cross=${{ env.TARGET_TRIPLE }}.2.27 \
+            -m release \
+            -vD
+          xmake
+
+      # ----- 编译 Go 服务 -----
+      - name: Build Go server
+        run: |
+          cd go_server/main
+          go build -ldflags="-s -w" -trimpath -o ../server
+          cd ../sms
+          go build -ldflags="-s -w" -trimpath -o ../bili-sms
+
+      # ----- 打包插件 -----
+      - name: Package plugin
+        run: |
+          chmod +x package.sh
+          ./package.sh
+
+      # ----- 上传产物 -----
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bili_plugin
+          path: bili_plugin.zip
+          retention-days: 30
