@@ -33,7 +33,6 @@ jobs:
         with:
           go-version: '1.21'
 
-      # 如果 go.sum 不存在，自动生成
       - name: Ensure go.sum exists
         run: |
           cd go_server
@@ -49,16 +48,28 @@ jobs:
         with:
           version: '0.11.0'
 
-      - name: Install aarch64 Qt (with retry)
+      - name: Install system qmake (host) and cross-compiled Qt libraries
         run: |
+          # 安装宿主机的 qmake，用于配置探测
+          sudo apt-get install -y qt5-qmake qtbase5-dev
+
+          # 下载并解压交叉编译的 Qt 库
           QT_URL="https://github.com/Redbeanw44602/aarch64-linux-qt-5.15.2/releases/download/5.15.2/aarch64-linux-qt-5.15.2.tar.gz"
           QT_DIR="$HOME/qt-5.15.2-aarch64-linux-gnu"
           mkdir -p "$QT_DIR"
           echo "Downloading Qt from $QT_URL"
           curl -L --retry 5 --retry-delay 5 --fail -o qt.tar.gz "$QT_URL"
           tar -xzf qt.tar.gz -C "$QT_DIR" --strip-components=1
+
+          # 如果交叉库没有 bin/qmake，创建软链接到系统 qmake
+          if [ ! -f "$QT_DIR/bin/qmake" ]; then
+            echo "qmake not found in cross Qt, linking to system qmake"
+            mkdir -p "$QT_DIR/bin"
+            ln -s /usr/bin/qmake "$QT_DIR/bin/qmake"
+          fi
+
           echo "QT_DIR=$QT_DIR" >> $GITHUB_ENV
-          echo "Qt installed at $QT_DIR"
+          echo "Qt installation prepared at $QT_DIR"
 
       - name: Build libbili_plugin.so
         run: |
