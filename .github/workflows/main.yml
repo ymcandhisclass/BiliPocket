@@ -21,8 +21,7 @@ jobs:
           # 更新包管理器并安装通用依赖
           sudo apt-get update -y
 
-          # 安装 Qt 开发包以提供头文件（用于本机构建 / 调试）
-          # 注意：注释不能放在反斜杠续行中间，否则会中断续行
+          # 安装系统依赖与 Qt 开发包（注释不能放在续行中间）
           sudo apt-get install -y --no-install-recommends \
             build-essential \
             cmake \
@@ -44,11 +43,21 @@ jobs:
 
       - name: Install xmake
         run: |
-          # 安装 xmake v3.0.9
-          wget https://github.com/xmake-io/xmake/releases/download/v3.0.9/xmake-v3.0.9.ubuntu.x86_64.AppImage
-          chmod +x xmake-v3.0.9.ubuntu.x86_64.AppImage
-          sudo mv xmake-v3.0.9.ubuntu.x86_64.AppImage /usr/local/bin/xmake
-          xmake --version
+          # 若系统已有 xmake 则跳过安装
+          if command -v xmake >/dev/null 2>&1; then
+            echo "xmake already installed:"
+            xmake --version
+          else
+            # 使用官方安装脚本安装 xmake（稳健）
+            if command -v curl >/dev/null 2>&1; then
+              curl -fsSL https://xmake.io/shget.text | bash -s -- -y
+            else
+              wget -qO- https://xmake.io/shget.text | bash -s -- -y
+            fi
+            export PATH="$HOME/.local/bin:$PATH"
+            echo "PATH=$PATH"
+            xmake --version
+          fi
 
       - name: Setup Qt cross-compilation
         run: |
@@ -57,7 +66,7 @@ jobs:
           wget -q https://github.com/Redbeanw44602/aarch64-linux-qt-5.15.2/releases/download/v5.15.2/qt-aarch64-linux-5.15.2.tar.gz -O qt.tar.gz || echo "Qt 下载失败，后续将尝试使用系统 Qt (/usr)"
           if [ -f qt.tar.gz ]; then
             tar -xzf qt.tar.gz -C $HOME/qt-aarch64 || echo "Qt 解压失败，后续将尝试使用系统 Qt (/usr)"
-            # 请根据解压结果调整 QT_ROOT，如果解压后目录名不同请修改
+            # 根据解压结果调整 QT_ROOT（如需修改请按实际目录）
             export QT_ROOT="$HOME/qt-aarch64/Qt-5.15.2-aarch64"
             if [ -d "$QT_ROOT" ]; then
               echo "使用交叉 Qt：$QT_ROOT"
@@ -75,7 +84,7 @@ jobs:
       - name: Build Plugin with xmake
         run: |
           export PATH=$PATH:/usr/local/go/bin
-          # 确保 QT_ROOT 有值，若上一步未设置则默认使用 /usr
+          # 确保 QT_ROOT 有值
           export QT_ROOT=${QT_ROOT:-/usr}
 
           echo "xmake using QT_ROOT=$QT_ROOT"
@@ -88,7 +97,7 @@ jobs:
             --cross=aarch64-linux-gnu.2.27 \
             -m release -vD
 
-          # 发起构建并开启详细输出，便于检查实际传入的 -I 路径
+          # 发起构建并开启详细输出（便于排查 include 路径）
           xmake -vD
 
       - name: Build Go services
