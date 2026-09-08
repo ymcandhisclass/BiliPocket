@@ -100,7 +100,7 @@ jobs:
           bash package.sh
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bili_plugin
           path: bili_plugin.zip
