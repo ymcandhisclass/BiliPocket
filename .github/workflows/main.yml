@@ -102,6 +102,11 @@ jobs:
           cd go_server
           bash build.sh
 
+      - name: Fix package.sh path for x86_64
+        run: |
+          # 自动将 package.sh 中的 arm64-v8a 替换为 x86_64
+          sed -i 's/arm64-v8a/x86_64/g' package.sh
+
       - name: Package plugin
         run: |
           bash package.sh
