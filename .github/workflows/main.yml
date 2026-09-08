@@ -60,9 +60,35 @@ jobs:
             echo "$HOME/.local/bin" >> $GITHUB_PATH
           fi
 
+      - name: Fix Qt linking (create unversioned .so symlinks if needed)
+        run: |
+          set -e
+          TARGET_DIR=/usr/lib/x86_64-linux-gnu
+          echo "Checking for unversioned libQt5Multimedia.so in $TARGET_DIR..."
+          if [ -f "$TARGET_DIR/libQt5Multimedia.so" ]; then
+            echo "libQt5Multimedia.so already present"
+            exit 0
+          fi
+
+          # Try to find a versioned libQt5Multimedia file
+          CAND=$(find "$TARGET_DIR" /usr/lib -type f -name 'libQt5Multimedia.so.*' | head -n 1 || true)
+          if [ -n "$CAND" ]; then
+            echo "Found versioned Qt multimedia lib: $CAND"
+            sudo ln -sf "$CAND" "$TARGET_DIR/libQt5Multimedia.so"
+            sudo ldconfig
+            echo "Created symlink: $TARGET_DIR/libQt5Multimedia.so -> $CAND"
+            exit 0
+          fi
+
+          # 如果没在常见目录找到，尝试更广泛搜索并打印调试信息
+          echo "未在 $TARGET_DIR 或 /usr/lib 中找到 libQt5Multimedia 的版本化库。列出这两个目录前 200 项供排查："
+          ls -la "$TARGET_DIR" | sed -n '1,200p' || true
+          ls -la /usr/lib | sed -n '1,200p' || true
+          echo "如果你需要交叉构建 aarch64，请确保提供包含 libQt5Multimedia.so 的 aarch64 Qt SDK，并在 workflow 中下载并解压。"
+          exit 1
+
       - name: Build Plugin with xmake (native x86_64 using clang)
         env:
-          # 强制使用 clang/clang++/lld，避免找不到 as 的问题
           CC: clang
           CXX: clang++
           LD: ld.lld
@@ -71,9 +97,8 @@ jobs:
           echo "using CC=$(command -v $CC || true), CXX=$(command -v $CXX || true), LD=$(command -v $LD || true)"
           xmake --version || true
 
-          # 清理并配置（本机构建，使用 clang）
+          # 本机构建（clang）
           xmake f -c -m release -vD
-          # 强制 xmake 使用环境的 CC/CXX（xmake 会检测 env）
           xmake -vD
 
       - name: Build Go services
