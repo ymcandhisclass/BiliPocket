@@ -24,6 +24,8 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential \
             binutils \
+            clang \
+            lld \
             cmake \
             git \
             pkg-config \
@@ -58,15 +60,20 @@ jobs:
             echo "$HOME/.local/bin" >> $GITHUB_PATH
           fi
 
-      - name: Build Plugin with xmake (native x86_64)
+      - name: Build Plugin with xmake (native x86_64 using clang)
         env:
+          # 强制使用 clang/clang++/lld，避免找不到 as 的问题
+          CC: clang
+          CXX: clang++
+          LD: ld.lld
           PATH: ${{ env.PATH }}:/usr/local/go/bin:$HOME/.local/bin
         run: |
-          echo "command -v xmake: $(command -v xmake || true)"
+          echo "using CC=$(command -v $CC || true), CXX=$(command -v $CXX || true), LD=$(command -v $LD || true)"
           xmake --version || true
 
-          # 本机构建，移除交叉参数
+          # 清理并配置（本机构建，使用 clang）
           xmake f -c -m release -vD
+          # 强制 xmake 使用环境的 CC/CXX（xmake 会检测 env）
           xmake -vD
 
       - name: Build Go services
