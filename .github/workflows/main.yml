@@ -70,7 +70,6 @@ jobs:
             exit 0
           fi
 
-          # Try to find a versioned libQt5Multimedia file
           CAND=$(find "$TARGET_DIR" /usr/lib -type f -name 'libQt5Multimedia.so.*' | head -n 1 || true)
           if [ -n "$CAND" ]; then
             echo "Found versioned Qt multimedia lib: $CAND"
@@ -80,11 +79,7 @@ jobs:
             exit 0
           fi
 
-          # 如果没在常见目录找到，尝试更广泛搜索并打印调试信息
-          echo "未在 $TARGET_DIR 或 /usr/lib 中找到 libQt5Multimedia 的版本化库。列出这两个目录前 200 项供排查："
-          ls -la "$TARGET_DIR" | sed -n '1,200p' || true
-          ls -la /usr/lib | sed -n '1,200p' || true
-          echo "如果你需要交叉构建 aarch64，请确保提供包含 libQt5Multimedia.so 的 aarch64 Qt SDK，并在 workflow 中下载并解压。"
+          echo "未在 $TARGET_DIR 或 /usr/lib 中找到 libQt5Multimedia 的版本化库。"
           exit 1
 
       - name: Build Plugin with xmake (native x86_64 using clang)
@@ -97,8 +92,8 @@ jobs:
           echo "using CC=$(command -v $CC || true), CXX=$(command -v $CXX || true), LD=$(command -v $LD || true)"
           xmake --version || true
 
-          # 本机构建（clang）
-          xmake f -c -m release -vD
+          # 本机构建（x86_64）
+          xmake f -c -m release -p linux -a x86_64 -vD
           xmake -vD
 
       - name: Build Go services
