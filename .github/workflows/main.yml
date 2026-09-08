@@ -36,7 +36,6 @@ jobs:
             libqt5quickwidgets5 \
             libqt5multimedia5 \
             libqt5multimedia5-plugins \
-            libqt5multimedia-dev \
             libqt5multimediawidgets5
 
           # 安装 Go（项目需要）
