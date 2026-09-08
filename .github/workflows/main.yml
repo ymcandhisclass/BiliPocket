@@ -18,10 +18,9 @@ jobs:
 
       - name: Set up build environment
         run: |
-          # 更新包管理器
           sudo apt-get update -y
 
-          # 安装系统依赖与 Qt 开发包（注意：不要在续行中放注释）
+          # 安装系统依赖与 Qt 开发包（注意：不要在续行中间放注释）
           sudo apt-get install -y --no-install-recommends \
             build-essential \
             cmake \
@@ -40,12 +39,12 @@ jobs:
           # 安装 Go 1.21
           wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
           sudo tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
-          echo "PATH=/usr/local/go/bin:$PATH" >> $GITHUB_PATH
+          echo "/usr/local/go/bin" >> $GITHUB_PATH
           go version
 
       - name: Install Zig (for zigcc toolchain)
         run: |
-          # 尝试通过 apt 安装 zig（若可用）
+          # 先尝试通过 apt 安装 zig
           if sudo apt-get install -y zig; then
             echo "zig installed via apt"
           else
@@ -58,10 +57,10 @@ jobs:
             sudo tar -xJf /tmp/$ZIG_TAR -C /opt/zig
             sudo ln -sfn /opt/zig/zig-linux-x86_64-${ZIG_VER} /opt/zig/current
             sudo ln -sfn /opt/zig/current/zig /usr/local/bin/zig
+            echo "/opt/zig/current" >> $GITHUB_PATH
             echo "zig installed to /opt/zig/current"
           fi
 
-          # 校验 zig 可用性
           if command -v zig >/dev/null 2>&1; then
             echo "zig version: $(zig version)"
           else
@@ -73,8 +72,7 @@ jobs:
         run: |
           if command -v xmake >/dev/null 2>&1; then
             echo "xmake already installed: $(xmake --version)"
-            # 把当前 xmake 路径加入 GITHUB_PATH（如果需要）
-            echo "PATH=$(dirname $(which xmake)):$PATH" >> $GITHUB_PATH
+            echo "$(dirname $(which xmake))" >> $GITHUB_PATH
           else
             # 使用官方安装脚本安装 xmake（不要把 -y 当作版本参数）
             if command -v curl >/dev/null 2>&1; then
@@ -82,49 +80,68 @@ jobs:
             else
               wget -qO- https://xmake.io/shget.text | bash -s --
             fi
-            # 安装脚本默认放到 $HOME/.local/bin
             echo "$HOME/.local/bin" >> $GITHUB_PATH
           fi
 
       - name: Setup Qt cross-compilation
         run: |
-          # 尝试下载并解压交叉 Qt（若不可用则使用系统 Qt /usr）
+          # 下载并解压交叉 Qt（若不可用则提示）
           mkdir -p $HOME/qt-aarch64
           QT_TARBALL="$HOME/qt-aarch64/qt.tar.gz"
-          wget -q https://github.com/Redbeanw44602/aarch64-linux-qt-5.15.2/releases/download/v5.15.2/qt-aarch64-linux-5.15.2.tar.gz -O "$QT_TARBALL" || echo "Qt tarball 下载失败，使用系统 Qt (/usr)"
+
+          # 请根据你的交叉 Qt 实际 URL 替换下面 URL（这是示例）
+          wget -q "https://github.com/Redbeanw44602/aarch64-linux-qt-5.15.2/releases/download/v5.15.2/qt-aarch64-linux-5.15.2.tar.gz" -O "$QT_TARBALL" || true
+
           if [ -f "$QT_TARBALL" ]; then
-            tar -xzf "$QT_TARBALL" -C $HOME/qt-aarch64 || echo "Qt 解压失败，使用系统 Qt (/usr)"
-            # 根据实际解压结构调整下行路径
-            QT_CANDIDATE="$HOME/qt-aarch64/Qt-5.15.2-aarch64"
-            if [ -d "$QT_CANDIDATE" ]; then
-              echo "交叉 Qt 解压并使用：$QT_CANDIDATE"
-              echo "QT_ROOT=$QT_CANDIDATE" >> $GITHUB_ENV
-            else
-              echo "未在预期路径找到交叉 Qt，改用系统 Qt (/usr)"
-              echo "QT_ROOT=/usr" >> $GITHUB_ENV
-            fi
-          else
-            echo "QT_ROOT=/usr" >> $GITHUB_ENV
+            tar -xzf "$QT_TARBALL" -C $HOME/qt-aarch64 || true
           fi
 
-          # 打印 include 以便排查
-          if [ -d "${QT_ROOT:-/usr}/include" ]; then ls -la "${QT_ROOT:-/usr}/include" | sed -n '1,200p'; else echo "警告：${QT_ROOT:-/usr}/include 不存在"; fi
+          # 在解压目录中查找 aarch64 Qt 的 libQt5Multimedia.so（必须）
+          LIBPATH=$(find "$HOME/qt-aarch64" -type f -name "libQt5Multimedia.so" -print -quit || true)
+
+          if [ -n "$LIBPATH" ]; then
+            QT_ROOT=$(dirname "$(dirname "$LIBPATH")")
+            echo "Found cross Qt multimedia library at: $LIBPATH"
+            echo "QT_ROOT=$QT_ROOT" >> $GITHUB_ENV
+            echo "CROSS_QT_OK=true" >> $GITHUB_ENV
+          else
+            # 没有提供交叉 Qt：写入环境变量并告知后续步骤失败前检查
+            echo "未在下载的交叉 Qt 中找到 libQt5Multimedia.so（aarch64）。"
+            echo "如果你需要生成 aarch64 的产物，请把 aarch64 Qt SDK 上传到可访问的 URL，并在此 workflow 中下载并解压。"
+            echo "QT_ROOT=/usr" >> $GITHUB_ENV
+            echo "CROSS_QT_OK=false" >> $GITHUB_ENV
+            # 打印 tar 内容以便排查（若存在）
+            if [ -f "$QT_TARBALL" ]; then
+              echo "==== qt tarball contents preview ===="
+              tar -tzf "$QT_TARBALL" | sed -n '1,200p'
+            fi
+          fi
+
+          # 列出 QT_ROOT 的 include / lib 便于调试（若存在）
+          if [ -n "${QT_ROOT:-}" ] && [ -d "${QT_ROOT}/include" ]; then ls -la "${QT_ROOT}/include" | sed -n '1,200p' || true; fi
+          if [ -n "${QT_ROOT:-}" ] && [ -d "${QT_ROOT}/lib" ]; then ls -la "${QT_ROOT}/lib" | sed -n '1,200p' || true; fi
+          if [ -n "${QT_ROOT:-}" ] && [ -d "${QT_ROOT}/lib64" ]; then ls -la "${QT_ROOT}/lib64" | sed -n '1,200p' || true; fi
 
       - name: Build Plugin with xmake
         env:
-          # 确保 PATH 包含 go 与 zig（GITHUB_PATH 已追加，但在 step 中也可显式设置）
-          PATH: ${{ env.PATH }}:/usr/local/bin:/usr/local/go/bin:/opt/zig/current:$HOME/.local/bin
+          PATH: ${{ env.PATH }}:/usr/local/go/bin:/opt/zig/current:$HOME/.local/bin
         run: |
           echo "which zig: $(which zig || true)"
           echo "zig version: $(zig version || true)"
           echo "which xmake: $(which xmake || true)"
           xmake --version || true
 
-          # 从 GITHUB_ENV 读取 QT_ROOT
+          # 读取是否有可用的交叉 Qt（由上一步写入）
+          if [ "${CROSS_QT_OK:-false}" != "true" ]; then
+            echo "ERROR: 未找到可用的 aarch64 Qt SDK（缺少 libQt5Multimedia.so）。"
+            echo "请提供预编译的 aarch64 Qt SDK，并使 workflow 下载并解压，或改为本地构建（去掉 xmake 的 --toolchain/--cross 参数）。"
+            exit 1
+          fi
+
           QT_ROOT=${QT_ROOT:-/usr}
           echo "使用 QT_ROOT=$QT_ROOT"
 
-          # 配置并构建（-vD 打印详细信息）
+          # xmake 配置：显式传入交叉 Qt 路径并使用 zigcc 工具链
           xmake f -c \
             --qt="$QT_ROOT" \
             --arch=arm64-v8a \
@@ -132,6 +149,7 @@ jobs:
             --cross=aarch64-linux-gnu.2.27 \
             -m release -vD
 
+          # 执行构建并输出详细日志
           xmake -vD
 
       - name: Build Go services
