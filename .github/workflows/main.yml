@@ -92,7 +92,7 @@ jobs:
           echo "using CC=$(command -v $CC || true), CXX=$(command -v $CXX || true), LD=$(command -v $LD || true)"
           xmake --version || true
 
-          # 本机构建（x86_64）
+          # 显式指定平台为 linux，架构为 x86_64
           xmake f -c -m release -p linux -a x86_64 -vD
           xmake -vD
 
