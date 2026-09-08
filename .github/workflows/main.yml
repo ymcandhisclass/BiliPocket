@@ -19,15 +19,17 @@ jobs:
       - name: Set up build environment
         run: |
           # 更新包管理器并安装通用依赖
-          sudo apt-get update
-          sudo apt-get install -y \
+          sudo apt-get update -y
+
+          # 安装 Qt 开发包以提供头文件（用于本机构建 / 调试）
+          # 注意：注释不能放在反斜杠续行中间，否则会中断续行
+          sudo apt-get install -y --no-install-recommends \
             build-essential \
             cmake \
             git \
             pkg-config \
             wget \
             zip \
-            # 安装 Qt 开发包以提供头文件（用于本机构建 / 调试）
             qtbase5-dev \
             qtdeclarative5-dev \
             qml-module-qtquick2 \
