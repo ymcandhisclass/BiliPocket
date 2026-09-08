@@ -20,9 +20,10 @@ jobs:
         run: |
           sudo apt-get update -y
 
-          # 安装系统依赖与 Qt 开发包（本机构建）
+          # 安装系统依赖与 Qt 开发包（用于本机构建 x86_64）
           sudo apt-get install -y --no-install-recommends \
             build-essential \
+            binutils \
             cmake \
             git \
             pkg-config \
@@ -33,23 +34,16 @@ jobs:
             qml-module-qtquick2 \
             qtquickcontrols2-5-dev \
             libqt5quickwidgets5 \
-            libqt5multimedia5-plugins \
             libqt5multimedia5 \
+            libqt5multimedia5-plugins \
+            libqt5multimedia-dev \
             libqt5multimediawidgets5
 
-          # 安装 Go
+          # 安装 Go（项目需要）
           wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
           sudo tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
           echo "/usr/local/go/bin" >> $GITHUB_PATH
-
-      - name: Install Zig (optional for zigcc)
-        run: |
-          if command -v zig >/dev/null 2>&1; then
-            echo "zig present: $(zig version)"
-          else
-            # 安装 zig（可选，若不使用 zigcc 可省略）
-            sudo apt-get install -y zig || true
-          fi
+          go version
 
       - name: Install xmake
         run: |
@@ -65,15 +59,14 @@ jobs:
             echo "$HOME/.local/bin" >> $GITHUB_PATH
           fi
 
-      - name: Build Plugin with xmake (native)
+      - name: Build Plugin with xmake (native x86_64)
         env:
           PATH: ${{ env.PATH }}:/usr/local/go/bin:$HOME/.local/bin
         run: |
-          echo "zig: $(command -v zig || true)"
-          echo "xmake: $(command -v xmake || true)"
+          echo "command -v xmake: $(command -v xmake || true)"
           xmake --version || true
 
-          # 使用系统 Qt，移除交叉参数（构建 x86_64 本机产物）
+          # 本机构建，移除交叉参数
           xmake f -c -m release -vD
           xmake -vD
 
@@ -93,3 +86,25 @@ jobs:
           name: bili_plugin
           path: bili_plugin.zip
           retention-days: 30
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: BiliPocket ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bili_plugin.zip
+          asset_name: bili_plugin.zip
+          asset_content_type: application/zip
