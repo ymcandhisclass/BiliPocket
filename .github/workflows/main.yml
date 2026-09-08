@@ -18,10 +18,9 @@ jobs:
 
       - name: Set up build environment
         run: |
-          # 更新包管理器并安装通用依赖
           sudo apt-get update -y
 
-          # 安装系统依赖与 Qt 开发包（注释不能放在续行中间）
+          # 安装系统依赖与 Qt 开发包（注释不要放在续行中间）
           sudo apt-get install -y --no-install-recommends \
             build-essential \
             cmake \
@@ -33,7 +32,10 @@ jobs:
             qtdeclarative5-dev \
             qml-module-qtquick2 \
             qtquickcontrols2-5-dev \
-            libqt5quickwidgets5
+            libqt5quickwidgets5 \
+            # 交叉编译备用交叉工具链（可选）
+            gcc-aarch64-linux-gnu \
+            g++-aarch64-linux-gnu
 
           # 安装 Go 1.21
           wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
@@ -41,43 +43,56 @@ jobs:
           export PATH=$PATH:/usr/local/go/bin
           go version
 
+      - name: Install Zig (for zigcc toolchain)
+        run: |
+          # 尝试通过 apt 安装 zig（最快）
+          if sudo apt-get install -y zig; then
+            echo "zig installed via apt"
+          else
+            echo "apt install zig failed or not available, attempting official download"
+            ZIG_VER="0.11.0"
+            ZIG_TAR="zig-linux-x86_64-${ZIG_VER}.tar.xz"
+            ZIG_URL="https://ziglang.org/download/${ZIG_VER}/${ZIG_TAR}"
+            wget -q "$ZIG_URL" -O /tmp/$ZIG_TAR || { echo "zig download failed"; exit 1; }
+            sudo mkdir -p /opt/zig
+            sudo tar -xJf /tmp/$ZIG_TAR -C /opt/zig
+            # create symlink to current
+            sudo ln -sfn /opt/zig/zig-linux-x86_64-${ZIG_VER} /opt/zig/current
+            sudo ln -sfn /opt/zig/current/zig /usr/local/bin/zig
+            echo "zig installed to /opt/zig/current"
+          fi
+
+          # verify
+          if command -v zig >/dev/null 2>&1; then
+            echo "zig version: $(zig version)"
+          else
+            echo "zig not found after install attempts" >&2
+            exit 1
+          fi
+
       - name: Install xmake
         run: |
-          # 若系统已有 xmake 则跳过安装
           if command -v xmake >/dev/null 2>&1; then
             echo "xmake already installed:"
             xmake --version
           else
-            # 使用官方安装脚本安装 xmake（不传 -y，避免被误解析为版本分支）
+            # 使用官方脚本安装 xmake（不要把 -y 当作版本）
             if command -v curl >/dev/null 2>&1; then
               curl -fsSL https://xmake.io/shget.text | bash -s --
             else
               wget -qO- https://xmake.io/shget.text | bash -s --
             fi
-
-            # 把安装目录加入 PATH（脚本会在 $HOME/.local/bin 下安装）
             export PATH="$HOME/.local/bin:$PATH"
-            echo "PATH=$PATH"
-
-            # 验证安装
             if command -v xmake >/dev/null 2>&1; then
               xmake --version
             else
-              echo "xmake 安装失败，尝试使用预构建 AppImage 作为回退"
-              # 回退：尝试下载常见的 AppImage（如果你有确切存在的 URL 可替换）
-              # 注意：若 AppImage 的固定版本不存在仍会 404，此处仅作回退示例
-              wget -q https://github.com/xmake-io/xmake/releases/latest/download/xmake-linux.zip -O /tmp/xmake-linux.zip || true
-              if [ -f /tmp/xmake-linux.zip ]; then
-                unzip -q /tmp/xmake-linux.zip -d /tmp/xmake-bin || true
-                export PATH="/tmp/xmake-bin:$PATH"
-                xmake --version || true
-              fi
+              echo "xmake 安装失败" >&2
+              exit 1
             fi
           fi
 
       - name: Setup Qt cross-compilation
         run: |
-          # 如果需要交叉编译（aarch64），下载并解压交叉 Qt 到 $HOME/qt-aarch64
           mkdir -p $HOME/qt-aarch64
           wget -q https://github.com/Redbeanw44602/aarch64-linux-qt-5.15.2/releases/download/v5.15.2/qt-aarch64-linux-5.15.2.tar.gz -O qt.tar.gz || echo "Qt 下载失败，后续将尝试使用系统 Qt (/usr)"
           if [ -f qt.tar.gz ]; then
@@ -92,16 +107,22 @@ jobs:
           else
             export QT_ROOT="/usr"
           fi
-
-          # 输出 include 列表以便排查
           if [ -d "$QT_ROOT/include" ]; then ls -la "$QT_ROOT/include" | sed -n '1,200p'; else echo "警告：$QT_ROOT/include 不存在"; fi
 
       - name: Build Plugin with xmake
+        env:
+          PATH: ${{ env.PATH }}:/usr/local/go/bin:/opt/zig/current
         run: |
-          export PATH=$PATH:/usr/local/go/bin
+          # 确保 zig 与 xmake 在 PATH 中
+          echo "which zig: $(which zig || true)"
+          echo "zig version: $(zig version || true)"
+          echo "which xmake: $(which xmake || true)"
+          xmake --version || true
+
           export QT_ROOT=${QT_ROOT:-/usr}
           echo "xmake using QT_ROOT=$QT_ROOT"
 
+          # 指定 --qt，使用 zigcc 工具链进行交叉构建（xmake 会查找 zig）
           xmake f -c \
             --qt="$QT_ROOT" \
             --arch=arm64-v8a \
@@ -109,6 +130,7 @@ jobs:
             --cross=aarch64-linux-gnu.2.27 \
             -m release -vD
 
+          # 构建并输出详细日志（便于检查 -I）
           xmake -vD
 
       - name: Build Go services
