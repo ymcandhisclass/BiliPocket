@@ -53,7 +53,7 @@ Rectangle {
             Text {
                 text: "⚠"
                 color: Theme.error
-                font.pixelSize: 20
+                font.pixelSize: Theme.s * 20
                 anchors.horizontalCenter: parent.horizontalCenter
             }
 
@@ -76,7 +76,7 @@ Rectangle {
 
                 // 重试按钮
                 Rectangle {
-                    width: 60; height: Theme.buttonHeight
+                    width: Theme.s * 60; height: Theme.buttonHeight
                     radius: Theme.radiusRound
                     color: retryArea.pressed ? Theme.primaryDark : Theme.primary
 
@@ -102,7 +102,7 @@ Rectangle {
 
                 // 关闭按钮
                 Rectangle {
-                    width: 60; height: Theme.buttonHeight
+                    width: Theme.s * 60; height: Theme.buttonHeight
                     radius: Theme.radiusRound
                     color: dismissArea.pressed ? Theme.bgTertiary : "transparent"
                     border.color: Theme.borderLight

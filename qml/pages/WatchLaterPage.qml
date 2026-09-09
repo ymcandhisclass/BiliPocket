@@ -5,8 +5,8 @@ import ".."
 
 Rectangle {
     id: watchLaterPage
-    width: 320
-    height: 170
+    width: parent ? parent.width : 320
+    height: parent ? parent.height : 170
     color: Theme.bgPrimary
 
     property var controller: null
@@ -168,8 +168,8 @@ Rectangle {
             opacity: watchLaterPage.deleteConfirmVisible ? 1 : 0
             scale: watchLaterPage.deleteConfirmVisible ? 1 : 0.92
             anchors.centerIn: parent
-            width: 210
-            height: 96
+            width: Theme.s * 210
+            height: Theme.s * 96
             radius: Theme.radiusLarge
             color: Theme.bgSecondary
             border.color: Theme.withAlpha(Theme.error, 0.55)
@@ -179,8 +179,8 @@ Rectangle {
 
             Column {
                 anchors.fill: parent
-                anchors.margins: 10
-                spacing: 7
+                anchors.margins: Theme.s * 10
+                spacing: Theme.s * 7
 
                 Text {
                     width: parent.width
@@ -204,19 +204,19 @@ Rectangle {
 
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: 10
+                    spacing: Theme.s * 10
                     Rectangle {
-                        width: 70
-                        height: 24
-                        radius: 12
+                        width: Theme.s * 70
+                        height: Theme.s * 24
+                        radius: Theme.s * 12
                         color: cancelDeleteArea.pressed ? Theme.bgTertiary : Theme.withAlpha(Theme.textSecondary, 0.12)
                         Text { anchors.centerIn: parent; text: "取消"; color: Theme.textSecondary; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSmall }
                         MouseArea { id: cancelDeleteArea; anchors.fill: parent; onClicked: watchLaterPage.deleteConfirmVisible = false }
                     }
                     Rectangle {
-                        width: 70
-                        height: 24
-                        radius: 12
+                        width: Theme.s * 70
+                        height: Theme.s * 24
+                        radius: Theme.s * 12
                         color: confirmDeleteArea.pressed ? Theme.withAlpha(Theme.error, 0.35) : Theme.withAlpha(Theme.error, 0.2)
                         Text { anchors.centerIn: parent; text: "删除"; color: Theme.error; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSmall; font.bold: true }
                         MouseArea {

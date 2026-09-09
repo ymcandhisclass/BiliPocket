@@ -7,8 +7,8 @@ import ".."
 
 Rectangle {
     id: commentsPage
-    width: 320
-    height: 170
+    width: parent ? parent.width : 320
+    height: parent ? parent.height : 170
     color: Theme.bgPrimary
 
     // 字体清晰度：在小字号+深色背景下，NativeRendering+强 Hinting 容易出现横竖笔画粗细不一致。
@@ -411,13 +411,13 @@ Rectangle {
     }
 
     Rectangle {
-        width: 110
-        height: 60
-        radius: 30
+        width: Theme.s * 110
+        height: Theme.s * 60
+        radius: Theme.s * 30
         anchors.right: parent.right
-        anchors.rightMargin: -28
+        anchors.rightMargin: Theme.s * -28
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: -18
+        anchors.bottomMargin: Theme.s * -18
         color: Theme.withAlpha(_pageBottomGlow, 0.55)
     }
 
@@ -426,18 +426,18 @@ Rectangle {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 28
+        height: Theme.s * 28
         z: 20
 
         Rectangle {
             id: backButton
-            width: 20
-            height: 20
-            radius: 10
+            width: Theme.s * 20
+            height: Theme.s * 20
+            radius: Theme.s * 10
             anchors.left: parent.left
-            anchors.leftMargin: 18
+            anchors.leftMargin: Theme.s * 26
             anchors.top: parent.top
-            anchors.topMargin: 4
+            anchors.topMargin: Theme.s * 6
             color: backButtonArea.pressed ? Theme.withAlpha(Theme.primary, 0.26) : Theme.withAlpha(_panelFill, 0.88)
             border.color: Theme.withAlpha(Theme.primary, backButtonArea.pressed ? 0.32 : 0.16)
             border.width: 1
@@ -453,7 +453,7 @@ Rectangle {
             MouseArea {
                 id: backButtonArea
                 anchors.fill: parent
-                anchors.margins: -8
+                anchors.margins: Theme.s * -8
                 onClicked: commentsPage.internalBack()
             }
         }
@@ -461,12 +461,12 @@ Rectangle {
         Rectangle {
             id: titleChip
             anchors.left: backButton.right
-            anchors.leftMargin: 6
+            anchors.leftMargin: Theme.s * 6
             anchors.top: parent.top
-            anchors.topMargin: 4
-            height: 20
+            anchors.topMargin: Theme.s * 4
+            height: Theme.s * 20
             width: titleText.implicitWidth + 12
-            radius: 10
+            radius: Theme.s * 10
             color: Theme.withAlpha(_panelFill, 0.9)
             border.color: Theme.withAlpha(_panelBorder, 0.82)
             border.width: 1
@@ -488,12 +488,12 @@ Rectangle {
         Rectangle {
             id: headerCountChip
             anchors.right: parent.right
-            anchors.rightMargin: 8
+            anchors.rightMargin: Theme.s * 8
             anchors.top: parent.top
-            anchors.topMargin: 6
+            anchors.topMargin: Theme.s * 6
             width: headerCountText.implicitWidth + 12
-            height: 15
-            radius: 8
+            height: Theme.s * 15
+            radius: Theme.s * 8
             color: Theme.withAlpha(Theme.primary, 0.14)
             border.color: Theme.withAlpha(Theme.primary, 0.22)
             border.width: 1
@@ -531,9 +531,9 @@ Rectangle {
             anchors.topMargin: Theme.spacingSmall
             anchors.left: titleChip.left
             anchors.right: parent.right
-            anchors.rightMargin: 8
+            anchors.rightMargin: Theme.s * 8
             height: 0
-            radius: 11
+            radius: Theme.s * 11
             color: "transparent"
             border.width: 0
             visible: false
@@ -546,11 +546,11 @@ Rectangle {
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.leftMargin: 6
-        anchors.rightMargin: 6
-        anchors.bottomMargin: 4
+        anchors.leftMargin: Theme.s * 6
+        anchors.rightMargin: Theme.s * 6
+        anchors.bottomMargin: Theme.s * 4
         model: controller && commentsPage.commentsModelAttached ? controller.comments.commentModel() : null
-        spacing: 5
+        spacing: Theme.s * 5
         clip: true
         // 不开 reuseItems（默认即 false）：每条有独立的 bodyExpanded 状态，复用会串
         cacheBuffer: 360
@@ -582,8 +582,8 @@ Rectangle {
             property bool liked: !!model.liked
 
             width: commentList.width
-            height: realContentLoader.item ? realContentLoader.item.height + 7 : 69
-            radius: 12
+            height: realContentLoader.item ? realContentLoader.item.height + Theme.s * 7 : Theme.s * 69
+            radius: Theme.s * 12
             color: pinned ? Theme.withAlpha(_cardFillStrong, 0.98) : Theme.withAlpha(_cardFill, 0.98)
             border.color: pinned ? Theme.withAlpha(Theme.primary, 0.34) : Theme.withAlpha(_panelBorder, 0.9)
             border.width: 1
@@ -593,9 +593,9 @@ Rectangle {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.top: parent.top
-                anchors.leftMargin: 6
-                anchors.rightMargin: 6
-                anchors.topMargin: 6
+                anchors.leftMargin: Theme.s * 6
+                anchors.rightMargin: Theme.s * 6
+                anchors.topMargin: Theme.s * 6
                 asynchronous: false
                 active: true
                 sourceComponent: realCommentComponent
@@ -611,12 +611,12 @@ Rectangle {
                     Row {
                         id: realRow
                         width: parent.width
-                        spacing: 6
+                        spacing: Theme.s * 6
 
                         Rectangle {
-                            width: 22
-                            height: 22
-                            radius: 11
+                            width: Theme.s * 22
+                            height: Theme.s * 22
+                            radius: Theme.s * 11
                             color: Theme.bgTertiary
 
                             Image {
@@ -633,12 +633,13 @@ Rectangle {
 
                         Column {
                             id: commentBodyColumn
-                            width: parent.width - 28
-                            spacing: 4
+                            // 22(头像) + 6(Row spacing)，与左侧兄弟节点同步缩放，否则 3 代上会顶出卡片
+                            width: parent.width - Theme.s * 28
+                            spacing: Theme.s * 4
 
                             Row {
                                 width: parent.width
-                                spacing: 4
+                                spacing: Theme.s * 4
 
                                 Text {
                                     width: Math.min(90, implicitWidth)
@@ -656,8 +657,8 @@ Rectangle {
                                 Rectangle {
                                     visible: commentsPage.isOwner(model.mid)
                                     width: ownerTagText.implicitWidth + 8
-                                    height: 12
-                                    radius: 6
+                                    height: Theme.s * 12
+                                    radius: Theme.s * 6
                                     color: Theme.withAlpha(Theme.accent, 0.18)
                                     border.color: Theme.withAlpha(Theme.accent, 0.28)
                                     border.width: 1
@@ -668,7 +669,7 @@ Rectangle {
                                         text: "UP"
                                         color: Theme.accent
                                         font.family: Theme.fontFamily
-                                        font.pixelSize: 7
+                                        font.pixelSize: Theme.s * 7
                                         font.bold: true
                                     }
                                 }
@@ -676,8 +677,8 @@ Rectangle {
                                 Rectangle {
                                     visible: (model.level || 0) > 0
                                     width: levelText.implicitWidth + 8
-                                    height: 12
-                                    radius: 6
+                                    height: Theme.s * 12
+                                    radius: Theme.s * 6
                                     color: Theme.withAlpha(commentsPage.levelAccent(model.level || 0), 0.16)
                                     border.color: Theme.withAlpha(commentsPage.levelAccent(model.level || 0), 0.30)
                                     border.width: 1
@@ -688,7 +689,7 @@ Rectangle {
                                         text: "Lv" + (model.level || 0)
                                         color: commentsPage.levelAccent(model.level || 0)
                                         font.family: Theme.fontFamily
-                                        font.pixelSize: 7
+                                        font.pixelSize: Theme.s * 7
                                         font.bold: true
                                     }
                                 }
@@ -696,8 +697,8 @@ Rectangle {
                                 Rectangle {
                                     visible: commentDelegate.pinned
                                     width: topTagText.implicitWidth + 10
-                                    height: 13
-                                    radius: 6
+                                    height: Theme.s * 13
+                                    radius: Theme.s * 6
                                     color: Qt.rgba(0.23, 0.51, 0.96, 0.18)
                                     border.color: Qt.rgba(0.38, 0.70, 1.0, 0.36)
                                     border.width: 1
@@ -708,7 +709,7 @@ Rectangle {
                                         text: "TOP"
                                         color: "#93c5fd"
                                         font.family: Theme.fontFamily
-                                        font.pixelSize: 7
+                                        font.pixelSize: Theme.s * 7
                                         font.bold: true
                                     }
                                 }
@@ -735,7 +736,7 @@ Rectangle {
                                 // paintedHeight 判断，省掉原先仅用于测高的隐藏 Text
                                 property bool hasMore: commentBodyText.paintedHeight > previewHeight + 1
                                 width: parent.width
-                                spacing: 2
+                                spacing: Theme.s * 2
 
                                 Item {
                                     width: parent.width
@@ -776,7 +777,7 @@ Rectangle {
 
                                     MouseArea {
                                         anchors.fill: parent
-                                        anchors.margins: -4
+                                        anchors.margins: Theme.s * -4
                                         onClicked: commentDelegate.bodyExpanded = !commentDelegate.bodyExpanded
                                     }
                                 }
@@ -784,13 +785,13 @@ Rectangle {
 
                             Row {
                                 width: parent.width
-                                spacing: 6
+                                spacing: Theme.s * 6
 
                                 Rectangle {
                                     visible: !!commentDelegate.cachedPictureUrl
                                     width: commentsPage._commentPictureWidth
                                     height: commentsPage._commentPictureHeight
-                                    radius: 8
+                                    radius: Theme.s * 8
                                     color: Theme.bgTertiary
                                     border.color: Theme.withAlpha(_panelBorder, 0.95)
                                     border.width: 1
@@ -816,24 +817,31 @@ Rectangle {
                                 }
 
                                 Item {
-                                    width: Math.max(0, parent.width - (commentDelegate.cachedPictureUrl ? commentsPage._commentPictureWidth + 6 : 0) - actionButtons.width)
+                                    // 弹性占位，把 actionButtons 顶到最右。
+                                    // 需要扣掉 Row 实际产生的 spacing：配图可见时 3 个子项 2 段，
+                                    // 不可见时（Row 不为隐藏项留位）2 个子项 1 段。
+                                    width: Math.max(0, parent.width
+                                                    - (commentDelegate.cachedPictureUrl
+                                                       ? commentsPage._commentPictureWidth + Theme.s * 6 : 0)
+                                                    - Theme.s * 6
+                                                    - actionButtons.width)
                                     height: 1
                                 }
 
                                 Row {
                                     id: actionButtons
                                     anchors.verticalCenter: parent.verticalCenter
-                                    spacing: 4
+                                    spacing: Theme.s * 4
 
                                     Rectangle {
-                                        width: 30
+                                        width: Theme.s * 30
                                         height: Theme.touchMinSize
                                         radius: Theme.radiusMedium
                                         color: likeArea.pressed ? Theme.withAlpha(Theme.primary, 0.15) : "transparent"
 
                                         Row {
                                             anchors.centerIn: parent
-                                            spacing: 3
+                                            spacing: Theme.s * 3
 
                                             Canvas {
                                                 id: commentLikeIcon
@@ -888,14 +896,14 @@ Rectangle {
                                     }
 
                                     Rectangle {
-                                        width: 32
+                                        width: Theme.s * 32
                                         height: Theme.touchMinSize
                                         radius: Theme.radiusMedium
                                         color: replyArea.pressed ? Theme.withAlpha(Theme.primary, 0.15) : "transparent"
 
                                         Row {
                                             anchors.centerIn: parent
-                                            spacing: 3
+                                            spacing: Theme.s * 3
 
                                             Canvas {
                                                 width: 11
@@ -968,7 +976,7 @@ Rectangle {
         Column {
             visible: commentsPage.initialCommentsRequested && commentList.count === 0 && controller && !commentsPage.isAnyCommentLoading()
             anchors.centerIn: parent
-            spacing: 2
+            spacing: Theme.s * 2
 
             Text {
                 text: "评论还没刷出来"
@@ -993,9 +1001,9 @@ Rectangle {
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.leftMargin: 6
-        anchors.rightMargin: 6
-        anchors.bottomMargin: 4
+        anchors.leftMargin: Theme.s * 6
+        anchors.rightMargin: Theme.s * 6
+        anchors.bottomMargin: Theme.s * 4
         visible: viewMode === 1
 
         ListView {
@@ -1005,7 +1013,7 @@ Rectangle {
             boundsBehavior: Flickable.DragOverBounds
             // 不开 reuseItems（默认即 false）：delegate 用 Component.onCompleted 命令式加载图片，复用不会重跑、会残留旧项
             cacheBuffer: 60
-            spacing: 5
+            spacing: Theme.s * 5
             model: controller ? controller.comments.commentReplyModel() : null
 
             onMovementStarted: commentsPage.deferCommentImages()
@@ -1034,25 +1042,25 @@ Rectangle {
 
             header: Column {
                 width: replyDetailFlick.width
-                spacing: 5
+                spacing: Theme.s * 5
 
                 Rectangle {
                     width: parent.width
                     height: detailHeaderColumn.height + 12
-                    radius: 12
+                    radius: Theme.s * 12
                     color: Theme.withAlpha(_cardFillStrong, 0.98)
                     border.color: Theme.withAlpha(Theme.primary, 0.24)
                     border.width: 1
 
                     Row {
                         anchors.fill: parent
-                        anchors.margins: 6
-                        spacing: 6
+                        anchors.margins: Theme.s * 6
+                        spacing: Theme.s * 6
 
                         Rectangle {
-                            width: 24
-                            height: 24
-                            radius: 12
+                            width: Theme.s * 24
+                            height: Theme.s * 24
+                            radius: Theme.s * 12
                             color: Theme.bgTertiary
 
                             Image {
@@ -1069,12 +1077,13 @@ Rectangle {
 
                         Column {
                             id: detailHeaderColumn
-                            width: parent.width - 30
-                            spacing: 4
+                            // 24(头像) + 6(Row spacing)
+                            width: parent.width - Theme.s * 30
+                            spacing: Theme.s * 4
 
                             Row {
                                 width: parent.width
-                                spacing: 4
+                                spacing: Theme.s * 4
 
                                 Text {
                                     id: detailUserNameText
@@ -1094,8 +1103,8 @@ Rectangle {
                                     id: detailTopTag
                                     visible: selectedComment && selectedComment.pinned
                                     width: detailTopTagText.implicitWidth + 10
-                                    height: 13
-                                    radius: 6
+                                    height: Theme.s * 13
+                                    radius: Theme.s * 6
                                     color: Qt.rgba(0.23, 0.51, 0.96, 0.18)
                                     border.color: Qt.rgba(0.38, 0.70, 1.0, 0.36)
                                     border.width: 1
@@ -1106,14 +1115,14 @@ Rectangle {
                                         text: "TOP"
                                         color: "#93c5fd"
                                         font.family: Theme.fontFamily
-                                        font.pixelSize: 7
+                                        font.pixelSize: Theme.s * 7
                                         font.bold: true
                                     }
                                 }
 
                                 Text {
                                     id: detailTimeText
-                                    width: 50
+                                    width: Theme.s * 50
                                     horizontalAlignment: Text.AlignRight
                                     text: selectedComment ? selectedComment.ctimeText : ""
                                     color: _mutedText
@@ -1130,15 +1139,15 @@ Rectangle {
                                                     - (detailTopTag.visible ? detailTopTag.width : 0)
                                                     - detailTimeText.width
                                                     - detailLikeBadge.width
-                                                    - (detailTopTag.visible ? 20 : 16))
+                                                    - Theme.s * (detailTopTag.visible ? 20 : 16))
                                     height: 1
                                 }
 
                                 Rectangle {
                                     id: detailLikeBadge
                                     width: detailLikeText.implicitWidth + 10
-                                    height: 14
-                                    radius: 7
+                                    height: Theme.s * 14
+                                    radius: Theme.s * 7
                                     color: selectedComment && selectedComment.liked
                                            ? Theme.withAlpha(Theme.primary, 0.25)
                                            : Theme.withAlpha(Theme.primary, 0.12)
@@ -1151,7 +1160,7 @@ Rectangle {
                                         text: "赞 " + commentsPage.compactCount(selectedComment ? selectedComment.likes : 0)
                                         color: selectedComment && selectedComment.liked ? Theme.primary : Theme.primaryLight
                                         font.family: Theme.fontFamily
-                                        font.pixelSize: 7
+                                        font.pixelSize: Theme.s * 7
                                     }
 
                                     MouseArea {
@@ -1186,7 +1195,7 @@ Rectangle {
                                 visible: selectedComment && !!commentsPage.firstPicture(selectedComment.pictures)
                                 width: commentsPage._commentPictureWidth
                                 height: commentsPage._commentPictureHeight
-                                radius: 8
+                                radius: Theme.s * 8
                                 color: Theme.bgTertiary
                                 border.color: Theme.withAlpha(_panelBorder, 0.95)
                                 border.width: 1
@@ -1212,17 +1221,17 @@ Rectangle {
 
                 Rectangle {
                     width: parent.width
-                    height: 18
-                    radius: 9
+                    height: Theme.s * 18
+                    radius: Theme.s * 9
                     color: Theme.withAlpha(_chipFill, 0.92)
                     border.color: Theme.withAlpha(_panelBorder, 0.8)
                     border.width: 1
 
                     Row {
                         anchors.left: parent.left
-                        anchors.leftMargin: 8
+                        anchors.leftMargin: Theme.s * 8
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 6
+                        spacing: Theme.s * 6
 
                         Text {
                             text: "回复列表"
@@ -1250,7 +1259,7 @@ Rectangle {
             delegate: Rectangle {
                 width: replyDetailFlick.width
                 height: replyContent.height + 7
-                radius: 12
+                radius: Theme.s * 12
                 color: Theme.withAlpha(_cardFill, 0.98)
                 border.color: Theme.withAlpha(_panelBorder, 0.9)
                 border.width: 1
@@ -1279,13 +1288,13 @@ Rectangle {
 
                 Row {
                     anchors.fill: parent
-                    anchors.margins: 6
-                    spacing: 6
+                    anchors.margins: Theme.s * 6
+                    spacing: Theme.s * 6
 
                     Rectangle {
-                        width: 20
-                        height: 20
-                        radius: 10
+                        width: Theme.s * 20
+                        height: Theme.s * 20
+                        radius: Theme.s * 10
                         color: Theme.bgTertiary
 
                         Image {
@@ -1301,12 +1310,13 @@ Rectangle {
 
                     Column {
                         id: replyContent
-                        width: parent.width - 26
-                        spacing: 4
+                        // 20(头像) + 6(Row spacing)
+                        width: parent.width - Theme.s * 26
+                        spacing: Theme.s * 4
 
                         Row {
                             width: parent.width
-                            spacing: 4
+                            spacing: Theme.s * 4
 
                             Text {
                                 width: Math.min(84, implicitWidth)
@@ -1324,8 +1334,8 @@ Rectangle {
                             Rectangle {
                                 visible: commentsPage.isOwner(model.mid)
                                 width: replyUpTagText.implicitWidth + 8
-                                height: 12
-                                radius: 6
+                                height: Theme.s * 12
+                                radius: Theme.s * 6
                                 color: Theme.withAlpha(Theme.accent, 0.18)
                                 border.color: Theme.withAlpha(Theme.accent, 0.28)
                                 border.width: 1
@@ -1336,7 +1346,7 @@ Rectangle {
                                     text: "UP"
                                     color: Theme.accent
                                     font.family: Theme.fontFamily
-                                    font.pixelSize: 7
+                                    font.pixelSize: Theme.s * 7
                                     font.bold: true
                                 }
                             }
@@ -1373,13 +1383,13 @@ Rectangle {
 
                         Row {
                             width: parent.width
-                            spacing: 6
+                            spacing: Theme.s * 6
 
                             Rectangle {
                                 visible: !!commentsPage.firstPicture(model.pictures)
                                 width: commentsPage._commentPictureWidth
                                 height: commentsPage._commentPictureHeight
-                                radius: 8
+                                radius: Theme.s * 8
                                 color: Theme.bgTertiary
                                 border.color: Theme.withAlpha(_panelBorder, 0.95)
                                 border.width: 1
@@ -1404,7 +1414,7 @@ Rectangle {
                                 icon: "👍"
                                 value: commentsPage.compactCount(model.likes || 0)
                                 active: !!model.liked
-                                width: 34
+                                width: Theme.s * 34
                                 anchors.verticalCenter: parent.verticalCenter
                                 onClicked: commentsPage.toggleCommentLike(model.rpid, model.liked)
                             }
@@ -1415,7 +1425,7 @@ Rectangle {
 
             footer: Column {
                 width: replyDetailFlick.width
-                spacing: 5
+                spacing: Theme.s * 5
 
                 Text {
                     visible: controller && controller.comments.commentReplyModel() && controller.comments.commentReplyModel().count === 0 && !commentsPage.isAnyCommentLoading()
@@ -1489,19 +1499,19 @@ Rectangle {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            height: 34
+            height: Theme.s * 34
             color: "transparent"
             z: 20
 
             Row {
                 anchors.right: parent.right
-                anchors.rightMargin: 10
+                anchors.rightMargin: Theme.s * 10
                 anchors.verticalCenter: parent.verticalCenter
 
                 Rectangle {
-                    width: 38
-                    height: 24
-                    radius: 10
+                    width: Theme.s * 38
+                    height: Theme.s * 24
+                    radius: Theme.s * 10
                     color: closeArea.pressed
                            ? Theme.withAlpha(Theme.primary, 0.22)
                            : Theme.withAlpha(Theme.bgTertiary, 0.55)
@@ -1544,17 +1554,17 @@ Rectangle {
         Row {
             id: loadingRow
             anchors.centerIn: parent
-            spacing: 3
+            spacing: Theme.s * 3
 
             Repeater {
                 model: 3
                 Item {
-                    width: 6
-                    height: 12
+                    width: Theme.s * 6
+                    height: Theme.s * 12
 
                     Rectangle {
-                        width: 5
-                        height: 5
+                        width: Theme.s * 5
+                        height: Theme.s * 5
                         radius: 2.5
                         color: Theme.primary
                         anchors.centerIn: parent
@@ -1572,21 +1582,21 @@ Rectangle {
 
             Item {
                 width: childrenRect.width
-                height: 12
+                height: Theme.s * 12
 
                 Text {
                     text: "加载中"
                     color: Theme.textSecondary
                     font.family: Theme.fontFamily
-                    font.pixelSize: 9
+                    font.pixelSize: Theme.s * 9
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
 
             Rectangle {
-                height: 16
+                height: Theme.s * 16
                 width: cancelTextItem.implicitWidth + 10
-                radius: 8
+                radius: Theme.s * 8
                 color: cancelArea.pressed
                        ? Theme.withAlpha(Theme.primary, 0.18)
                        : Theme.withAlpha(Theme.primary, 0.08)
@@ -1600,7 +1610,7 @@ Rectangle {
                     text: "取消"
                     color: Theme.textSecondary
                     font.family: Theme.fontFamily
-                    font.pixelSize: 8
+                    font.pixelSize: Theme.s * 8
                 }
 
                 MouseArea {

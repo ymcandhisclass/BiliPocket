@@ -6,8 +6,8 @@ import ".."
 
 Rectangle {
     id: homePage
-    width: 320
-    height: 170
+    width: parent ? parent.width : 320
+    height: parent ? parent.height : 170
     color: Theme.bgPrimary
 
     property var controller: null
@@ -155,9 +155,9 @@ Rectangle {
             Components.LoadMoreListView {
                 id: popularList
                 anchors.fill: parent
-                anchors.margins: 4
+                anchors.margins: Theme.s * 4
                 model: controller && homePage.popularModelAttached ? controller.feed.popularModel() : null
-                spacing: 6
+                spacing: Theme.s * 6
                 // 守卫用页面级 isLoading，而非 model.loading
                 loading: controller ? controller.isLoading : false
 
@@ -182,7 +182,7 @@ Rectangle {
                     anchors.left: parent.left
                     anchors.leftMargin: 2
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: 6
+                    spacing: Theme.s * 6
                     Repeater {
                         model: 3
                         VideoCardCompact {
@@ -198,7 +198,7 @@ Rectangle {
                     text: "暂无推荐视频"
                     color: Theme.textTertiary
                     font.family: Theme.fontFamily
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.s * 12
                     anchors.centerIn: parent
                 }
             }
@@ -213,17 +213,17 @@ Rectangle {
 
             Row {
                 anchors.centerIn: parent
-                spacing: 20
+                spacing: Theme.s * 20
 
                 // 头像区
                 Column {
-                    spacing: 6
+                    spacing: Theme.s * 6
                     anchors.verticalCenter: parent.verticalCenter
 
                     Rectangle {
-                        width: 56
-                        height: 56
-                        radius: 28
+                        width: Theme.s * 56
+                        height: Theme.s * 56
+                        radius: Theme.s * 28
                         color: Theme.bgTertiary
                         anchors.horizontalCenter: parent.horizontalCenter
                         border.color: controller && controller.loggedIn
@@ -247,12 +247,12 @@ Rectangle {
                             anchors.centerIn: parent
                             visible: !avatarImg.visible
                             text: controller && controller.loggedIn ? "👤" : "🔐"
-                            font.pixelSize: 24
+                            font.pixelSize: Theme.s * 24
                         }
 
                         MouseArea {
                             anchors.fill: parent
-                            anchors.margins: -8
+                            anchors.margins: Theme.s * -8
                             onClicked: {
                                 if (controller && controller.loggedIn)
                                     homePage.loginRequested()
@@ -266,7 +266,7 @@ Rectangle {
                         color: controller && controller.loggedIn
                         ? Theme.textPrimary : Theme.primary
                         font.family: Theme.fontFamily
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.s * 12
                         font.bold: true
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
@@ -275,13 +275,13 @@ Rectangle {
                 // 信息区（登录后显示）
                 Column {
                     visible: controller && controller.loggedIn
-                    spacing: 8
+                    spacing: Theme.s * 8
                     anchors.verticalCenter: parent.verticalCenter
 
                     Row {
-                        spacing: 6
+                        spacing: Theme.s * 6
                         Rectangle {
-                            width: 8; height: 8; radius: 4
+                            width: Theme.s * 8; height: Theme.s * 8; radius: Theme.s * 4
                             color: Theme.success
                             anchors.verticalCenter: parent.verticalCenter
                         }
@@ -289,7 +289,7 @@ Rectangle {
                             text: "已登录"
                             color: Theme.success
                             font.family: Theme.fontFamily
-                            font.pixelSize: 10
+                            font.pixelSize: Theme.s * 10
                         }
                     }
 
@@ -297,7 +297,7 @@ Rectangle {
                         text: "Lv" + (controller ? controller.userLevel : 0)
                         color: Theme.primary
                         font.family: Theme.fontFamily
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.s * 14
                         font.bold: true
                     }
 
@@ -305,7 +305,7 @@ Rectangle {
                         text: "硬币: " + (controller ? controller.userCoins : 0)
                         color: Theme.textSecondary
                         font.family: Theme.fontFamily
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.s * 10
                     }
                 }
             }
@@ -325,13 +325,13 @@ Rectangle {
     // ── 更多菜单：从底部“更多”按钮淡入，后续功能继续纵向追加 ──
     Rectangle {
         id: moreMenu
-        width: 68
+        width: Theme.s * 68
         height: moreMenuColumn.implicitHeight + 8
         anchors.right: parent.right
-        anchors.rightMargin: 8
+        anchors.rightMargin: Theme.s * 8
         anchors.bottom: tabBar.top
-        anchors.bottomMargin: 4
-        radius: 10
+        anchors.bottomMargin: Theme.s * 4
+        radius: Theme.s * 10
         z: 30
         opacity: moreMenuVisible ? 1 : 0
         visible: moreMenuVisible || opacity > 0.01
@@ -347,13 +347,13 @@ Rectangle {
         Column {
             id: moreMenuColumn
             anchors.fill: parent
-            anchors.margins: 4
-            spacing: 4
+            anchors.margins: Theme.s * 4
+            spacing: Theme.s * 4
 
             Rectangle {
                 width: parent.width
-                height: 20
-                radius: 8
+                height: Theme.s * 20
+                radius: Theme.s * 8
                 color: dynamicMoreArea.pressed ? Theme.withAlpha(Theme.primary, 0.22) : "transparent"
 
                 Text {
@@ -361,14 +361,14 @@ Rectangle {
                     text: "动态"
                     color: Theme.textPrimary
                     font.family: Theme.fontFamily
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.s * 11
                     font.bold: true
                 }
 
                 MouseArea {
                     id: dynamicMoreArea
                     anchors.fill: parent
-                    anchors.margins: -3
+                    anchors.margins: Theme.s * -3
                     onClicked: {
                         moreMenuVisible = false
                         dynamicRequested()
@@ -378,8 +378,8 @@ Rectangle {
 
             Rectangle {
                 width: parent.width
-                height: 20
-                radius: 8
+                height: Theme.s * 20
+                radius: Theme.s * 8
                 color: rankingMoreArea.pressed ? Theme.withAlpha(Theme.primary, 0.22) : "transparent"
 
                 Text {
@@ -387,14 +387,14 @@ Rectangle {
                     text: "排行"
                     color: Theme.textPrimary
                     font.family: Theme.fontFamily
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.s * 11
                     font.bold: true
                 }
 
                 MouseArea {
                     id: rankingMoreArea
                     anchors.fill: parent
-                    anchors.margins: -3
+                    anchors.margins: Theme.s * -3
                     onClicked: {
                         moreMenuVisible = false
                         rankingRequested()
@@ -408,7 +408,7 @@ Rectangle {
     Rectangle {
         id: tabBar
         width: parent.width
-        height: 26
+        height: Theme.s * 26
         color: Theme.bgSecondary
         anchors.bottom: parent.bottom
         z: 10
@@ -422,17 +422,17 @@ Rectangle {
         }
 
         Row {
-            width: parent.width - 16
+            width: parent.width - Theme.s * 16
             anchors.centerIn: parent
-            spacing: 4
+            spacing: Theme.s * 4
 
-            readonly property real exitButtonWidth: 24
+            readonly property real exitButtonWidth: 24 * Theme.s
             readonly property real tabButtonWidth: (width - exitButtonWidth - spacing * 4) / 4
 
             Rectangle {
                 width: parent.exitButtonWidth
-                height: 20
-                radius: 10
+                height: Theme.s * 20
+                radius: Theme.s * 10
                 color: exitMouseArea.pressed ? Theme.withAlpha(Theme.primary, 0.2) : "transparent"
                 border.color: Theme.withAlpha(Theme.primary, 0.25)
                 border.width: 1
@@ -473,7 +473,7 @@ Rectangle {
                 MouseArea {
                     id: exitMouseArea
                     anchors.fill: parent
-                    anchors.margins: -4
+                    anchors.margins: Theme.s * -4
                     onClicked: {
                         moreMenuVisible = false
                         homePage.backButtonClicked()
@@ -491,8 +491,8 @@ Rectangle {
 
                 Rectangle {
                     width: parent.tabButtonWidth
-                    height: 20
-                    radius: 10
+                    height: Theme.s * 20
+                    radius: Theme.s * 10
                     color: {
                         if (tabMouseArea.pressed) return Theme.withAlpha(Theme.primary, 0.2)
                         if (modelData.idx === 2) return Theme.bgTertiary
@@ -515,7 +515,7 @@ Rectangle {
                                 : Theme.textSecondary
                         }
                         font.family: Theme.fontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: Theme.s * 11
                         font.bold: (tabIndex === modelData.idx || (modelData.idx === 4 && moreMenuVisible)) && modelData.idx !== 2
                         anchors.centerIn: parent
 
@@ -525,7 +525,7 @@ Rectangle {
                     MouseArea {
                         id: tabMouseArea
                         anchors.fill: parent
-                        anchors.margins: -4
+                        anchors.margins: Theme.s * -4
                         onClicked: switchTab(modelData.idx)
                     }
                 }
@@ -538,8 +538,8 @@ Rectangle {
         visible: homePage.loadingPillVisible
         anchors.centerIn: contentArea
         width: loadingRow.width + 16
-        height: 22
-        radius: 11
+        height: Theme.s * 22
+        radius: Theme.s * 11
         color: Theme.withAlpha(Theme.bgSecondary, 0.95)
         border.color: Theme.borderLight
         border.width: 1
@@ -547,17 +547,17 @@ Rectangle {
         Row {
             id: loadingRow
             anchors.centerIn: parent
-            spacing: 3
+            spacing: Theme.s * 3
 
             Repeater {
                 model: 3
                 Item {
-                    width: 6
-                    height: 12
+                    width: Theme.s * 6
+                    height: Theme.s * 12
 
                     Rectangle {
-                        width: 5
-                        height: 5
+                        width: Theme.s * 5
+                        height: Theme.s * 5
                         radius: 2.5
                         color: Theme.primary
                         anchors.centerIn: parent
@@ -575,21 +575,21 @@ Rectangle {
 
             Item {
                 width: childrenRect.width
-                height: 12
+                height: Theme.s * 12
 
                 Text {
                     text: "加载中"
                     color: Theme.textSecondary
                     font.family: Theme.fontFamily
-                    font.pixelSize: 9
+                    font.pixelSize: Theme.s * 9
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
 
             Rectangle {
-                height: 16
+                height: Theme.s * 16
                 width: cancelTextItem.implicitWidth + 10
-                radius: 8
+                radius: Theme.s * 8
                 color: cancelArea.pressed
                        ? Theme.withAlpha(Theme.primary, 0.18)
                        : Theme.withAlpha(Theme.primary, 0.08)
@@ -603,7 +603,7 @@ Rectangle {
                     text: "取消"
                     color: Theme.textSecondary
                     font.family: Theme.fontFamily
-                    font.pixelSize: 8
+                    font.pixelSize: Theme.s * 8
                 }
 
                 MouseArea {

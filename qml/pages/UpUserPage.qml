@@ -5,8 +5,8 @@ import ".."
 
 Rectangle {
     id: upPage
-    width: 320
-    height: 170
+    width: parent ? parent.width : 320
+    height: parent ? parent.height : 170
     color: Theme.bgPrimary
 
     property var controller: null
@@ -496,15 +496,15 @@ Rectangle {
             Row {
                 id: headerRow
                 width: parent.width - Theme.spacingLarge * 2
-                height: 64
+                height: Theme.s * 64
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: Theme.spacingLarge
 
                 Rectangle {
                     id: avatarWrap
-                    width: 64
-                    height: 64
-                    radius: 32
+                    width: Theme.s * 64
+                    height: Theme.s * 64
+                    radius: Theme.s * 32
                     color: Theme.bgTertiary
                     border.color: Theme.primary
                     border.width: 2
@@ -527,7 +527,8 @@ Rectangle {
 
                 Column {
                     id: infoColumn
-                    width: parent.width - 96
+                    // 64(头像) + spacing + 余量，需随 s 缩放
+                    width: parent.width - Theme.s * 96
                     spacing: Theme.spacingSmall
                     anchors.verticalCenter: parent.verticalCenter
 
@@ -549,7 +550,7 @@ Rectangle {
                         // UID 徽标
                         Rectangle {
                             id: uidBadge
-                            height: 18
+                            height: Theme.s * 18
                             radius: Theme.radiusRound
                             color: Theme.withAlpha(Theme.primary, 0.12)
                             border.color: Theme.withAlpha(Theme.primary, 0.35)
@@ -572,8 +573,8 @@ Rectangle {
                         spacing: Theme.spacingSmall
 
                         Rectangle {
-                            width: 40
-                            height: 18
+                            width: Theme.s * 40
+                            height: Theme.s * 18
                             radius: Theme.radiusRound
                             color: Theme.primary
 
@@ -588,7 +589,7 @@ Rectangle {
                         }
 
                         Rectangle {
-                            height: 18
+                            height: Theme.s * 18
                             radius: Theme.radiusRound
                             color: controller && controller.upIsFollowing
                                    ? (followArea.pressed ? Theme.bgTertiary : Theme.bgSecondary)
@@ -622,13 +623,13 @@ Rectangle {
                     Row {
                         width: parent.width
                         height: visible ? 16 : 0
-                        spacing: 4
+                        spacing: Theme.s * 4
                         visible: upPage.hasUpBadges()
                         clip: true
 
                         Rectangle {
                             visible: controller && controller.upOfficialLabel !== ""
-                            height: 16
+                            height: Theme.s * 16
                             radius: Theme.radiusRound
                             color: Theme.withAlpha(Theme.primary, 0.16)
                             border.color: Theme.withAlpha(Theme.primary, 0.36)
@@ -638,7 +639,7 @@ Rectangle {
                             Text {
                                 id: officialBadgeText
                                 anchors.centerIn: parent
-                                width: parent.width - 8
+                                width: parent.width - Theme.s * 8
                                 text: controller ? controller.upOfficialLabel : ""
                                 color: Theme.primaryLight
                                 font.family: Theme.fontFamily
@@ -651,7 +652,7 @@ Rectangle {
 
                         Rectangle {
                             visible: controller && controller.upVipLabel !== ""
-                            height: 16
+                            height: Theme.s * 16
                             radius: Theme.radiusRound
                             color: Theme.withAlpha(Theme.accent, 0.18)
                             border.color: Theme.withAlpha(Theme.accent, 0.38)
@@ -661,7 +662,7 @@ Rectangle {
                             Text {
                                 id: vipBadgeText
                                 anchors.centerIn: parent
-                                width: parent.width - 8
+                                width: parent.width - Theme.s * 8
                                 text: controller ? controller.upVipLabel : ""
                                 color: "#FB7299"
                                 font.family: Theme.fontFamily
@@ -674,7 +675,7 @@ Rectangle {
 
                         Rectangle {
                             visible: upPage.upFansMedalLabel() !== ""
-                            height: 16
+                            height: Theme.s * 16
                             radius: Theme.radiusRound
                             color: Theme.withAlpha(Theme.warning, 0.16)
                             border.color: Theme.withAlpha(Theme.warning, 0.36)
@@ -684,7 +685,7 @@ Rectangle {
                             Text {
                                 id: medalBadgeText
                                 anchors.centerIn: parent
-                                width: parent.width - 8
+                                width: parent.width - Theme.s * 8
                                 text: upPage.upFansMedalLabel()
                                 color: Theme.warning
                                 font.family: Theme.fontFamily
@@ -723,7 +724,7 @@ Rectangle {
             // 粉丝/关注
             Row {
                 width: parent.width - Theme.spacingLarge * 2
-                height: 28
+                height: Theme.s * 28
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: Theme.spacingSmall
 
@@ -731,7 +732,7 @@ Rectangle {
 
                 Column {
                     width: parent.colW
-                    spacing: 4
+                    spacing: Theme.s * 4
 
                     Text {
                         width: parent.width
@@ -754,7 +755,7 @@ Rectangle {
 
                 Column {
                     width: parent.colW
-                    spacing: 4
+                    spacing: Theme.s * 4
 
                     Text {
                         width: parent.width
@@ -786,7 +787,7 @@ Rectangle {
                 Item {
                     id: videoHeader
                     width: parent.width
-                    height: 24
+                    height: Theme.s * 24
                     anchors.top: parent.top
 
                     Row {
@@ -798,7 +799,7 @@ Rectangle {
 
                         // 装饰条
                         Rectangle {
-                            width: 3
+                            width: Theme.s * 3
                             height: titleHeaderText.implicitHeight - 2
                             radius: 1.5
                             color: Theme.primary
@@ -844,12 +845,12 @@ Rectangle {
                     Rectangle {
                         id: searchButton
                         anchors.right: lastWatchedButton.left
-                        anchors.rightMargin: 6
+                        anchors.rightMargin: Theme.s * 6
                         anchors.verticalCenter: parent.verticalCenter
                         visible: !upPage.upDynamicMode
                         width: visible ? 34 : 0
-                        height: 20
-                        radius: 10
+                        height: Theme.s * 20
+                        radius: Theme.s * 10
                         color: searchArea.pressed ? Theme.withAlpha(Theme.primary, 0.22)
                                                   : Theme.withAlpha(Theme.primary, 0.10)
                         border.color: Theme.withAlpha(Theme.primary, 0.32)
@@ -888,8 +889,8 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         visible: !upPage.upDynamicMode
                         width: visible ? 58 : 0
-                        height: 20
-                        radius: 10
+                        height: Theme.s * 20
+                        radius: Theme.s * 10
                         color: lastWatchedArea.pressed ? Theme.withAlpha(Theme.primary, 0.22)
                                                         : Theme.withAlpha(Theme.primary, 0.10)
                         border.color: Theme.withAlpha(Theme.primary, 0.32)
@@ -925,7 +926,7 @@ Rectangle {
                 Item {
                     id: filterStrip
                     width: parent.width
-                    height: 24
+                    height: Theme.s * 24
                     visible: !upPage.upSearchMode
                     anchors.top: videoHeader.bottom
                     anchors.topMargin: Theme.spacingSmall
@@ -955,7 +956,7 @@ Rectangle {
                         Row {
                             id: filterRow
                             x: Theme.spacingLarge
-                            spacing: 6
+                            spacing: Theme.s * 6
                             anchors.verticalCenter: parent.verticalCenter
 
                             // “视频”全部 chip
@@ -1012,7 +1013,7 @@ Rectangle {
 
                                 Row {
                                     anchors.centerIn: parent
-                                    spacing: 4
+                                    spacing: Theme.s * 4
 
                                     Canvas {
                                         id: dynamicChipIcon
@@ -1103,15 +1104,15 @@ Rectangle {
 
                                     Row {
                                         anchors.centerIn: parent
-                                        spacing: 4
+                                        spacing: Theme.s * 4
 
                                         // 合集小图标：两层错位的小方块，暗示叠放/合集
                                         Item {
-                                            width: 10; height: 10
+                                            width: Theme.s * 10; height: Theme.s * 10
                                             anchors.verticalCenter: parent.verticalCenter
 
                                             Rectangle {
-                                                width: 7; height: 7
+                                                width: Theme.s * 7; height: Theme.s * 7
                                                 radius: 1.5
                                                 color: "transparent"
                                                 border.color: seasonChip.selected ? Theme.textOnPrimary : Theme.textSecondary
@@ -1119,7 +1120,7 @@ Rectangle {
                                                 x: 0; y: 3
                                             }
                                             Rectangle {
-                                                width: 7; height: 7
+                                                width: Theme.s * 7; height: Theme.s * 7
                                                 radius: 1.5
                                                 color: seasonChip.selected ? Theme.textOnPrimary : Theme.textSecondary
                                                 x: 3; y: 0
@@ -1197,10 +1198,10 @@ Rectangle {
                     id: upVideoList
                     visible: !upPage.upSearchMode && !upPage.upDynamicMode
                     width: parent.width
-                    height: 135
+                    height: Theme.s * 135
                     anchors.top: filterStrip.bottom
                     anchors.topMargin: Theme.spacingNormal
-                    spacing: 6
+                    spacing: Theme.s * 6
                     model: controller ? controller.up.upVideoModel() : null
                     leftMargin: 4
                     rightMargin: 4
@@ -1257,9 +1258,9 @@ Rectangle {
                     Row {
                         visible: upVideoList.count === 0 && controller && controller.isLoading
                         anchors.left: parent.left
-                        anchors.leftMargin: 4
+                        anchors.leftMargin: Theme.s * 4
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 6
+                        spacing: Theme.s * 6
                         Repeater {
                             model: 3
                             Components.VideoCardCompact {
@@ -1276,11 +1277,11 @@ Rectangle {
                     id: upDynamicList
                     visible: !upPage.upSearchMode && upPage.upDynamicMode
                     width: parent.width
-                    height: 135
+                    height: Theme.s * 135
                     anchors.top: filterStrip.bottom
                     anchors.topMargin: Theme.spacingNormal
                     orientation: ListView.Vertical
-                    spacing: 5
+                    spacing: Theme.s * 5
                     // 纵向小视口：需覆盖横向默认的 cacheBuffer/displayMargin
                     cacheBuffer: 360
                     displayMarginBeginning: 120
@@ -1333,10 +1334,10 @@ Rectangle {
                     id: upSearchResultList
                     visible: upPage.upSearchMode
                     width: parent.width
-                    height: 135
+                    height: Theme.s * 135
                     anchors.top: videoHeader.bottom
                     anchors.topMargin: Theme.spacingSmall
-                    spacing: 6
+                    spacing: Theme.s * 6
                     model: controller && controller.up ? controller.up.upSearchVideoModel() : null
                     leftMargin: 4
                     rightMargin: 4
@@ -1366,9 +1367,9 @@ Rectangle {
                                  && upSearchResultList.model.loading
                                  && upSearchResultList.count === 0
                         anchors.left: parent.left
-                        anchors.leftMargin: 4
+                        anchors.leftMargin: Theme.s * 4
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 6
+                        spacing: Theme.s * 6
                         Repeater {
                             model: 3
                             Components.VideoCardCompact {
@@ -1440,7 +1441,7 @@ Rectangle {
                     color: Theme.textTertiary
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.top: upVideoList.bottom
-                    anchors.topMargin: 6
+                    anchors.topMargin: Theme.s * 6
                 }
 
                 Text {
@@ -1454,7 +1455,7 @@ Rectangle {
                     color: Theme.textTertiary
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.top: upDynamicList.bottom
-                    anchors.topMargin: 6
+                    anchors.topMargin: Theme.s * 6
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSmall
                 }
@@ -1470,7 +1471,7 @@ Rectangle {
                     color: Theme.textTertiary
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.top: upSearchResultList.bottom
-                    anchors.topMargin: 6
+                    anchors.topMargin: Theme.s * 6
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSmall
                 }
@@ -1513,7 +1514,7 @@ Rectangle {
 
             Row {
                 width: parent.width - Theme.spacingLarge * 2
-                height: 64
+                height: Theme.s * 64
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: Theme.spacingLarge
 
@@ -1548,8 +1549,8 @@ Rectangle {
                 }
 
                 Components.SkeletonPill {
-                    width: parent.width - 96
-                    height: 58
+                    width: parent.width - Theme.s * 96
+                    height: Theme.s * 58
                     anchors.verticalCenter: parent.verticalCenter
                     paintToken: upPage.skeletonPaintToken
                     // x/w ≤1 为宽度比例，>1 为绝对像素
@@ -1564,9 +1565,9 @@ Rectangle {
 
             Rectangle {
                 width: parent.width - Theme.spacingLarge * 2
-                height: 44
+                height: Theme.s * 44
                 anchors.horizontalCenter: parent.horizontalCenter
-                radius: 10
+                radius: Theme.s * 10
                 color: Theme.bgSecondary
 
                 Components.SkeletonPill {
@@ -1581,7 +1582,7 @@ Rectangle {
 
             Components.SkeletonPill {
                 width: parent.width - Theme.spacingLarge * 2
-                height: 32
+                height: Theme.s * 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 paintToken: upPage.skeletonPaintToken
                 pills: [
@@ -1594,13 +1595,13 @@ Rectangle {
 
             Row {
                 width: parent.width
-                height: 135
-                spacing: 6
+                height: Theme.s * 135
+                spacing: Theme.s * 6
                 anchors.horizontalCenter: parent.horizontalCenter
                 Repeater {
                     model: 3
                     Components.VideoCardCompact {
-                        height: 135
+                        height: Theme.s * 135
                         placeholder: true
                         titleScale: 0.9
                         subScale: 0.85

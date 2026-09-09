@@ -7,6 +7,28 @@ Item {
         source: "LXGWWenKai-Regular.ttf"
     }
 
+    // ── 屏幕适配 ──
+    // 设计基准 320x170（2代），3代为 800x254（更宽的横条屏）。
+    // 高度是硬约束：统一按高度缩放（2代 s=1.0，3代 s≈1.49），
+    // 宽度交给 anchors 拉伸，横向列表/网格自然多显示条目。
+    // 由 main.qml 在 Component.onCompleted 里根据实际尺寸设置。
+    property real s: 1.0
+    readonly property real designW: 320
+    readonly property real designH: 170
+
+    // 由 main.qml 一并写入实际屏幕尺寸，供下面的宽屏判定使用。
+    property real screenW: designW
+    property real screenH: designH
+
+    // 3代宽高比 ≈3.15，设计基准 ≈1.88 —— 3代是明显更扁的横条。
+    // 按高度等比放大后纵向吃紧、横向富余，于是分两个方向处理：
+    //   sv       纵向尺寸系数，宽屏下收一档，让竖直堆叠仍放得下一屏
+    //   contentW 单列内容的目标宽度，避免按钮行被拉成极长的条
+    readonly property real aspect: screenH > 0 ? screenW / screenH : designW / designH
+    readonly property bool wide: aspect > (designW / designH) * 1.25
+    property real sv: wide ? s * 0.9 : s
+    readonly property real contentW: (designW - 16) * s
+
     // ── 主题色 ──
     readonly property color primary: "#00A1D6"
     readonly property color primaryLight: "#23ADE5"
@@ -52,46 +74,46 @@ Item {
     // 与 RichText.js 的 DEFAULT_LINK_COLOR 保持一致
     readonly property string richTextLinkColor: "#60a5fa"
 
-    // ── 字体尺寸（320x170 优化）──
-    readonly property int fontTiny: 7
-    readonly property int fontSmall: 8
-    readonly property int fontBody: 9
-    readonly property int fontNormal: 10
-    readonly property int fontMedium: 11
-    readonly property int fontLarge: 13
-    readonly property int fontTitle: 14
-    readonly property int fontHuge: 18
+    // ── 字体尺寸（设计基准值 × s；2代 s=1，3代 s≈1.49）──
+    property real fontTiny: 7 * s
+    property real fontSmall: 8 * s
+    property real fontBody: 9 * s
+    property real fontNormal: 10 * s
+    property real fontMedium: 11 * s
+    property real fontLarge: 13 * s
+    property real fontTitle: 14 * s
+    property real fontHuge: 18 * s
 
     // ── 间距 ──
-    readonly property int spacingTiny: 2
-    readonly property int spacingSmall: 4
-    readonly property int spacingNormal: 6
-    readonly property int spacingMedium: 8
-    readonly property int spacingLarge: 12
-    readonly property int spacingXL: 16
+    property real spacingTiny: 2 * s
+    property real spacingSmall: 4 * s
+    property real spacingNormal: 6 * s
+    property real spacingMedium: 8 * s
+    property real spacingLarge: 12 * s
+    property real spacingXL: 16 * s
 
-    // ── 圆角体系 ──
-    readonly property int radiusTiny: 2
-    readonly property int radiusSmall: 4
-    readonly property int radiusMedium: 6
-    readonly property int radiusLarge: 10
-    readonly property int radiusXL: 14
+    // ── 圆角体系（radiusRound 保持超大值以成胶囊形）──
+    property real radiusTiny: 2 * s
+    property real radiusSmall: 4 * s
+    property real radiusMedium: 6 * s
+    property real radiusLarge: 10 * s
+    property real radiusXL: 14 * s
     readonly property int radiusRound: 999
 
     // ── 列表/卡片布局 ──
-    readonly property int cardWidth: 105
+    property real cardWidth: 105 * s
     readonly property int listCacheBuffer: 640
     readonly property int listDisplayMargin: 160
 
-    // ── 触摸最小点击区域 ──
-    readonly property int touchMinSize: 28
-    readonly property int buttonHeight: 24
-    readonly property int buttonHeightLarge: 30
+    // ── 触摸最小点击区域 / 按钮高度 ──
+    property real touchMinSize: 28 * s
+    property real buttonHeight: 24 * s
+    property real buttonHeightLarge: 30 * s
 
     // ── 标题栏 ──
-    readonly property int titleBarHeight: 28
+    property real titleBarHeight: 28 * s
 
-    // ── 动画时长 ──
+    // ── 动画时长（不缩放）──
     readonly property int animFast: 120
     readonly property int animNormal: 200
     readonly property int animSlow: 350

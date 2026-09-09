@@ -5,8 +5,8 @@ import ".."
 
 Rectangle {
     id: detailPage
-    width: 320
-    height: 170
+    width: parent ? parent.width : 320
+    height: parent ? parent.height : 170
     color: Theme.bgPrimary
     clip: true
 
@@ -124,18 +124,18 @@ Rectangle {
             width: flick.width - 12
             x: 6
             y: 6
-            spacing: 6
+            spacing: Theme.s * 6
 
             Row {
                 width: parent.width
-                height: 24
-                spacing: 6
+                height: Theme.s * 24
+                spacing: Theme.s * 6
 
                 Rectangle {
                     id: authorAvatar
-                    width: 22
-                    height: 22
-                    radius: 11
+                    width: Theme.s * 22
+                    height: Theme.s * 22
+                    radius: Theme.s * 11
                     color: Theme.bgTertiary
                     clip: true
 
@@ -157,14 +157,15 @@ Rectangle {
 
                     MouseArea {
                         anchors.fill: parent
-                        anchors.margins: -4
+                        anchors.margins: Theme.s * -4
                         enabled: Number(value("authorMid", 0) || 0) > 0
                         onClicked: detailPage.upRequested(Number(value("authorMid", 0)))
                     }
                 }
 
                 Column {
-                    width: parent.width - 28
+                    // 22(头像) + 6(Row spacing)
+                    width: parent.width - Theme.s * 28
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 1
 
@@ -223,7 +224,7 @@ Rectangle {
                 Text {
                     id: forwardText
                     anchors.fill: parent
-                    anchors.margins: 6
+                    anchors.margins: Theme.s * 6
                     text: value("origTitle", "") || value("origSummary", "")
                     color: Theme.textSecondary
                     font.family: Theme.fontFamily
@@ -238,7 +239,7 @@ Rectangle {
                 model: pictureItems
                 delegate: Rectangle {
                     width: contentColumn.width
-                    height: 118
+                    height: Theme.s * 118
                     radius: Theme.radiusSmall
                     color: Theme.bgTertiary
                     clip: true
@@ -263,7 +264,7 @@ Rectangle {
             Rectangle {
                 visible: openBvid.length > 0
                 width: parent.width
-                height: 28
+                height: Theme.s * 28
                 radius: Theme.radiusSmall
                 color: openVideoArea.pressed ? Theme.withAlpha(Theme.primary, 0.28)
                                              : Theme.withAlpha(Theme.primary, 0.14)
@@ -289,7 +290,7 @@ Rectangle {
             Rectangle {
                 id: actionDock
                 width: parent.width
-                height: 30
+                height: Theme.s * 30
                 radius: Theme.radiusMedium
                 color: Theme.withAlpha(Theme.bgSecondary, 0.92)
                 border.width: 1
@@ -297,8 +298,8 @@ Rectangle {
 
                 Row {
                     anchors.fill: parent
-                    anchors.margins: 3
-                    spacing: 4
+                    anchors.margins: Theme.s * 3
+                    spacing: Theme.s * 4
 
                     Item {
                         id: likeAction
@@ -315,7 +316,7 @@ Rectangle {
 
                         Row {
                             anchors.centerIn: parent
-                            spacing: 5
+                            spacing: Theme.s * 5
 
                             Canvas {
                                 width: 14
@@ -350,7 +351,7 @@ Rectangle {
                                 font.pixelSize: Theme.fontSmall
                                 font.bold: true
                                 elide: Text.ElideRight
-                                width: 88
+                                width: Theme.s * 88
                             }
                         }
                     }
@@ -374,7 +375,7 @@ Rectangle {
 
                         Row {
                             anchors.centerIn: parent
-                            spacing: 5
+                            spacing: Theme.s * 5
 
                             Canvas {
                                 width: 15
@@ -419,7 +420,7 @@ Rectangle {
                                 font.pixelSize: Theme.fontSmall
                                 font.bold: true
                                 elide: Text.ElideRight
-                                width: 88
+                                width: Theme.s * 88
                             }
                         }
 
@@ -450,7 +451,7 @@ Rectangle {
 
         Image {
             anchors.fill: parent
-            anchors.margins: 8
+            anchors.margins: Theme.s * 8
             // 大图查看：保留原图，不加 sourceSize 限制
             source: ImageUrl.originalImageSource(detailPage.fullscreenImageUrl)
             fillMode: Image.PreserveAspectFit

@@ -5,8 +5,8 @@ import ".."
 
 Rectangle {
     id: userPage
-    width: 320
-    height: 170
+    width: parent ? parent.width : 320
+    height: parent ? parent.height : 170
     color: Theme.bgPrimary
 
     property var controller: null
@@ -240,8 +240,8 @@ Rectangle {
                     spacing: Theme.spacingLarge
 
                     Rectangle {
-                        width: 60
-                        height: 60
+                        width: Theme.s * 60
+                        height: Theme.s * 60
                         radius: Theme.radiusRound
                         color: loginAvatarArea.pressed ? Theme.withAlpha(Theme.primary, 0.18) : Theme.bgTertiary
                         border.color: Theme.withAlpha(Theme.primary, 0.45)
@@ -292,7 +292,7 @@ Rectangle {
                     }
 
                     Item {
-                        width: 190
+                        width: Theme.s * 190
                         height: loginInfoColumn.height
                         anchors.verticalCenter: parent.verticalCenter
 
@@ -310,7 +310,7 @@ Rectangle {
                             }
 
                             Text {
-                                width: 180
+                                width: Theme.s * 180
                                 text: "登录后可查看收藏夹、稍后再看和观看历史"
                                 color: Theme.textSecondary
                                 font.family: Theme.fontFamily
@@ -336,19 +336,19 @@ Rectangle {
 
                     Column {
                         width: parent.colW
-                        spacing: 4
+                        spacing: Theme.s * 4
                         Text { width: parent.width; text: "--"; color: Theme.textTertiary; font.family: Theme.fontFamily; font.pixelSize: userPage.bumpFont(Theme.fontMedium); font.bold: true; horizontalAlignment: Text.AlignHCenter }
                         Text { width: parent.width; text: "粉丝"; color: Theme.textSecondary; font.family: Theme.fontFamily; font.pixelSize: userPage.bumpFont(Theme.fontSmall); horizontalAlignment: Text.AlignHCenter }
                     }
                     Column {
                         width: parent.colW
-                        spacing: 4
+                        spacing: Theme.s * 4
                         Text { width: parent.width; text: "--"; color: Theme.textTertiary; font.family: Theme.fontFamily; font.pixelSize: userPage.bumpFont(Theme.fontMedium); font.bold: true; horizontalAlignment: Text.AlignHCenter }
                         Text { width: parent.width; text: "关注"; color: Theme.textSecondary; font.family: Theme.fontFamily; font.pixelSize: userPage.bumpFont(Theme.fontSmall); horizontalAlignment: Text.AlignHCenter }
                     }
                     Column {
                         width: parent.colW
-                        spacing: 4
+                        spacing: Theme.s * 4
                         Text { width: parent.width; text: "--"; color: Theme.textTertiary; font.family: Theme.fontFamily; font.pixelSize: userPage.bumpFont(Theme.fontMedium); font.bold: true; horizontalAlignment: Text.AlignHCenter }
                         Text { width: parent.width; text: "硬币"; color: Theme.textSecondary; font.family: Theme.fontFamily; font.pixelSize: userPage.bumpFont(Theme.fontSmall); horizontalAlignment: Text.AlignHCenter }
                     }
@@ -366,11 +366,11 @@ Rectangle {
                             { label: "设置", action: "settings" }
                         ]
                         Column {
-                            spacing: 6
+                            spacing: Theme.s * 6
                             Rectangle {
-                                width: 36
-                                height: 36
-                                radius: 18
+                                width: Theme.s * 36
+                                height: Theme.s * 36
+                                radius: Theme.s * 18
                                 color: lockedEntryArea.pressed ? Theme.withAlpha(Theme.primary, 0.18) : Theme.withAlpha(Theme.primary, modelData.action === "settings" ? 0.12 : 0.08)
                                 border.color: Theme.withAlpha(Theme.primary, modelData.action === "settings" ? 0.35 : 0.2)
                                 border.width: 1
@@ -466,7 +466,7 @@ Rectangle {
 
             // ── 二维码区域（放大！）──
             Rectangle {
-                width: 110; height: 110
+                width: Theme.s * 110; height: Theme.s * 110
                 radius: Theme.radiusLarge
                 color: "#FFFFFF"
                 anchors.verticalCenter: parent.verticalCenter
@@ -475,7 +475,7 @@ Rectangle {
                 Rectangle {
                     id: qrContainer
                     anchors.fill: parent
-                    anchors.margins: 6
+                    anchors.margins: Theme.s * 6
                     radius: Theme.radiusMedium
                     color: "#FFFFFF"
                     clip: true
@@ -571,9 +571,9 @@ Rectangle {
                 Rectangle {
                     anchors.top: parent.top
                     anchors.right: parent.right
-                    anchors.topMargin: -4
-                    anchors.rightMargin: -4
-                    width: 20; height: 20
+                    anchors.topMargin: Theme.s * -4
+                    anchors.rightMargin: Theme.s * -4
+                    width: Theme.s * 20; height: Theme.s * 20
                     radius: Theme.radiusRound
                     color: Theme.primary
                     z: 2
@@ -590,7 +590,7 @@ Rectangle {
 
             // ── 说明文字 ──
             Column {
-                width: 130
+                width: Theme.s * 130
                 spacing: Theme.spacingMedium
                 anchors.verticalCenter: parent.verticalCenter
 
@@ -608,7 +608,7 @@ Rectangle {
                     Row {
                         spacing: Theme.spacingSmall
                         Rectangle {
-                            width: 16; height: 16
+                            width: Theme.s * 16; height: Theme.s * 16
                             radius: Theme.radiusRound
                             color: Theme.withAlpha(Theme.primary, 0.2)
                             anchors.verticalCenter: parent.verticalCenter
@@ -633,7 +633,7 @@ Rectangle {
                     Row {
                         spacing: Theme.spacingSmall
                         Rectangle {
-                            width: 16; height: 16
+                            width: Theme.s * 16; height: Theme.s * 16
                             radius: Theme.radiusRound
                             color: Theme.withAlpha(Theme.primary, 0.2)
                             anchors.verticalCenter: parent.verticalCenter
@@ -658,7 +658,7 @@ Rectangle {
                     Row {
                         spacing: Theme.spacingSmall
                         Rectangle {
-                            width: 16; height: 16
+                            width: Theme.s * 16; height: Theme.s * 16
                             radius: Theme.radiusRound
                             color: Theme.withAlpha(Theme.primary, 0.2)
                             anchors.verticalCenter: parent.verticalCenter
@@ -684,8 +684,8 @@ Rectangle {
                        spacing: Theme.spacingSmall
 
                         Rectangle {
-                            width: 16
-                            height: 16
+                            width: Theme.s * 16
+                            height: Theme.s * 16
                             radius: Theme.radiusRound
                             color: Theme.withAlpha(Theme.primary, 0.2)
                             anchors.verticalCenter: parent.verticalCenter
@@ -712,7 +712,7 @@ Rectangle {
 
                 // 刷新按钮
                 Rectangle {
-                    width: 80; height: Theme.buttonHeight
+                    width: Theme.s * 80; height: Theme.buttonHeight
                     radius: Theme.radiusRound
                     color: refreshArea.pressed ? Theme.primaryDark : Theme.primary
                     visible: controller ? controller.qrcodeUrl !== "" : false
@@ -796,7 +796,7 @@ Rectangle {
 
                         // 头像
                         Rectangle {
-                            width: 60; height: 60
+                            width: Theme.s * 60; height: Theme.s * 60
                             radius: Theme.radiusRound
                             color: Theme.bgTertiary
                             border.color: Theme.primary
@@ -831,8 +831,8 @@ Rectangle {
                                 spacing: Theme.spacingSmall
 
                                 Rectangle {
-                                    width: 10; height: 10
-                                    radius: 5
+                                    width: Theme.s * 10; height: Theme.s * 10
+                                    radius: Theme.s * 5
                                     color: Theme.success
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
@@ -850,7 +850,7 @@ Rectangle {
                                 spacing: Theme.spacingSmall
 
                                 Rectangle {
-                                    width: 40; height: 20
+                                    width: Theme.s * 40; height: Theme.s * 20
                                     radius: Theme.radiusRound
                                     color: Theme.primary
                                     anchors.verticalCenter: parent.verticalCenter
@@ -866,13 +866,13 @@ Rectangle {
                                 }
 
                                 Item {
-                                    width: 108; height: 20
+                                    width: Theme.s * 108; height: Theme.s * 20
                                     anchors.verticalCenter: parent.verticalCenter
 
                                     Rectangle {
                                         width: parent.width
-                                        height: 5
-                                        radius: 4
+                                        height: Theme.s * 5
+                                        radius: Theme.s * 4
                                         anchors.verticalCenter: parent.verticalCenter
                                         color: Theme.withAlpha(Theme.bgTertiary, 0.9)
                                         clip: true
@@ -900,7 +900,7 @@ Rectangle {
 
                             // VIP 标签
                             Rectangle {
-                                width: 60; height: 20
+                                width: Theme.s * 60; height: Theme.s * 20
                                 radius: Theme.radiusRound
                                 color: controller && controller.userIsVip ? "#FB7299" : Theme.bgTertiary
                                 visible: controller && (controller.userIsVip || controller.userVipLabel !== "")
@@ -937,7 +937,7 @@ Rectangle {
                         // 粉丝
                         Column {
                             width: parent.colW
-                            spacing: 4
+                            spacing: Theme.s * 4
 
                             Text {
                                 width: parent.width
@@ -962,7 +962,7 @@ Rectangle {
                         // 关注
                         Column {
                             width: parent.colW
-                            spacing: 4
+                            spacing: Theme.s * 4
 
                             Text {
                                 width: parent.width
@@ -987,7 +987,7 @@ Rectangle {
                         // 硬币
                         Column {
                             width: parent.colW
-                            spacing: 4
+                            spacing: Theme.s * 4
 
                             Text {
                                 width: parent.width
@@ -1016,12 +1016,12 @@ Rectangle {
                         spacing: Theme.spacingLarge
 
                         Column {
-                            spacing: 6
+                            spacing: Theme.s * 6
 
                             Rectangle {
-                                width: 36
-                                height: 36
-                                radius: 18
+                                width: Theme.s * 36
+                                height: Theme.s * 36
+                                radius: Theme.s * 18
                                 color: favEntryArea.pressed ? Theme.withAlpha(Theme.primary, 0.2) : Theme.withAlpha(Theme.primary, 0.12)
                                 border.color: Theme.withAlpha(Theme.primary, 0.35)
                                 border.width: 1
@@ -1073,12 +1073,12 @@ Rectangle {
                         }
 
                         Column {
-                            spacing: 6
+                            spacing: Theme.s * 6
 
                             Rectangle {
-                                width: 36
-                                height: 36
-                                radius: 18
+                                width: Theme.s * 36
+                                height: Theme.s * 36
+                                radius: Theme.s * 18
                                 color: historyEntryArea.pressed ? Theme.withAlpha(Theme.primary, 0.2) : Theme.withAlpha(Theme.primary, 0.12)
                                 border.color: Theme.withAlpha(Theme.primary, 0.35)
                                 border.width: 1
@@ -1134,12 +1134,12 @@ Rectangle {
                         }
 
                         Column {
-                            spacing: 6
+                            spacing: Theme.s * 6
 
                             Rectangle {
-                                width: 36
-                                height: 36
-                                radius: 18
+                                width: Theme.s * 36
+                                height: Theme.s * 36
+                                radius: Theme.s * 18
                                 color: watchLaterEntryArea.pressed ? Theme.withAlpha(Theme.primary, 0.2) : Theme.withAlpha(Theme.primary, 0.12)
                                 border.color: Theme.withAlpha(Theme.primary, 0.35)
                                 border.width: 1
@@ -1190,12 +1190,12 @@ Rectangle {
                         }
 
                         Column {
-                            spacing: 6
+                            spacing: Theme.s * 6
 
                             Rectangle {
-                                width: 36
-                                height: 36
-                                radius: 18
+                                width: Theme.s * 36
+                                height: Theme.s * 36
+                                radius: Theme.s * 18
                                 color: settingsEntryArea.pressed ? Theme.withAlpha(Theme.primary, 0.2) : Theme.withAlpha(Theme.primary, 0.12)
                                 border.color: Theme.withAlpha(Theme.primary, 0.35)
                                 border.width: 1
@@ -1247,7 +1247,7 @@ Rectangle {
 
                     // 退出登录按钮
                     Rectangle {
-                        width: 120; height: Theme.buttonHeight
+                        width: Theme.s * 120; height: Theme.buttonHeight
                         radius: Theme.radiusRound
                         color: "transparent"
                         border.color: Theme.withAlpha(Theme.error, 0.5)
@@ -1301,7 +1301,7 @@ Rectangle {
 
                 delegate: Rectangle {
                     width: parent.width
-                    height: 54
+                    height: Theme.s * 54
                     radius: Theme.radiusMedium
                     color: Theme.bgSecondary
                     border.color: Theme.withAlpha(Theme.primary, 0.15)
@@ -1309,11 +1309,11 @@ Rectangle {
 
                     Row {
                         anchors.fill: parent
-                        anchors.margins: 6
-                        spacing: 8
+                        anchors.margins: Theme.s * 6
+                        spacing: Theme.s * 8
 
                         Rectangle {
-                            width: 72
+                            width: Theme.s * 72
                             height: parent.height - 2
                             radius: Theme.radiusSmall
                             color: Theme.bgTertiary
@@ -1329,8 +1329,9 @@ Rectangle {
                         }
 
                         Column {
-                            width: parent.width - 90
-                            spacing: 4
+                            // 72(封面) + 8(Row spacing) + 余量，需随 s 缩放
+                            width: parent.width - Theme.s * 90
+                            spacing: Theme.s * 4
                             anchors.verticalCenter: parent.verticalCenter
 
                             Text {
@@ -1515,11 +1516,11 @@ Rectangle {
                             visible: userPage.recentHistorySearchMode
                             anchors.top: parent.top
                             anchors.right: parent.right
-                            anchors.topMargin: 4
-                            anchors.rightMargin: 6
-                            width: Math.min(parent.width - 12, searchLabel.implicitWidth + 42)
-                            height: 22
-                            radius: 11
+                            anchors.topMargin: Theme.s * 4
+                            anchors.rightMargin: Theme.s * 6
+                            width: Math.min(parent.width - Theme.s * 12, searchLabel.implicitWidth + Theme.s * 42)
+                            height: Theme.s * 22
+                            radius: Theme.s * 11
                             color: Theme.withAlpha(Theme.primary, 0.16)
                             border.color: Theme.withAlpha(Theme.primary, 0.45)
                             z: 20
@@ -1527,19 +1528,19 @@ Rectangle {
                             Text {
                                 id: searchLabel
                                 anchors.left: parent.left
-                                anchors.leftMargin: 8
+                                anchors.leftMargin: Theme.s * 8
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: "搜索：" + userPage.recentHistoryKeyword
                                 color: Theme.primary
                                 font.family: Theme.fontFamily
                                 font.pixelSize: Theme.fontSmall
                                 elide: Text.ElideRight
-                                width: parent.width - 32
+                                width: parent.width - Theme.s * 32
                             }
 
                             Canvas {
                                 anchors.right: parent.right
-                                anchors.rightMargin: 8
+                                anchors.rightMargin: Theme.s * 8
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: 10
                                 height: 10
@@ -1569,8 +1570,8 @@ Rectangle {
                             opacity: deleteConfirmVisible ? 1 : 0
                             scale: deleteConfirmVisible ? 1 : 0.92
                             anchors.centerIn: parent
-                            width: 210
-                            height: 96
+                            width: Theme.s * 210
+                            height: Theme.s * 96
                             radius: Theme.radiusLarge
                             color: Theme.bgSecondary
                             border.color: Theme.withAlpha(Theme.error, 0.55)
@@ -1580,8 +1581,8 @@ Rectangle {
 
                             Column {
                                 anchors.fill: parent
-                                anchors.margins: 10
-                                spacing: 7
+                                anchors.margins: Theme.s * 10
+                                spacing: Theme.s * 7
 
                                 Text {
                                     width: parent.width
@@ -1605,19 +1606,19 @@ Rectangle {
 
                                 Row {
                                     anchors.horizontalCenter: parent.horizontalCenter
-                                    spacing: 10
+                                    spacing: Theme.s * 10
                                     Rectangle {
-                                        width: 70
-                                        height: 24
-                                        radius: 12
+                                        width: Theme.s * 70
+                                        height: Theme.s * 24
+                                        radius: Theme.s * 12
                                         color: cancelDeleteArea.pressed ? Theme.bgTertiary : Theme.withAlpha(Theme.textSecondary, 0.12)
                                         Text { anchors.centerIn: parent; text: "取消"; color: Theme.textSecondary; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSmall }
                                         MouseArea { id: cancelDeleteArea; anchors.fill: parent; onClicked: deleteConfirmVisible = false }
                                     }
                                     Rectangle {
-                                        width: 70
-                                        height: 24
-                                        radius: 12
+                                        width: Theme.s * 70
+                                        height: Theme.s * 24
+                                        radius: Theme.s * 12
                                         color: confirmDeleteArea.pressed ? Theme.withAlpha(Theme.error, 0.35) : Theme.withAlpha(Theme.error, 0.2)
                                         Text { anchors.centerIn: parent; text: "删除"; color: Theme.error; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSmall; font.bold: true }
                                         MouseArea {

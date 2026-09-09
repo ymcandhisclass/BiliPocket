@@ -9,8 +9,8 @@ import ".."
 
 Rectangle {
     id: playerPage
-    width: 320
-    height: 170
+    width: parent ? parent.width : 320
+    height: parent ? parent.height : 170
     color: "#000000"
 
     property var controller: null
@@ -20,9 +20,9 @@ Rectangle {
     property bool controlsVisible: true
     property bool launchRequested: false
 
-    readonly property int btnSize: 36
-    readonly property int iconSize: 20
-    readonly property int barHeight: 36
+    readonly property real btnSize: 36 * Theme.s
+    readonly property real iconSize: 20 * Theme.s
+    readonly property real barHeight: 36 * Theme.s
     readonly property color accentColor: "#00A1D6"
 
     Connections {
@@ -64,7 +64,7 @@ Rectangle {
             text: controller ? "点击播放按钮以开始" : "正在初始化..."
             color: "#999999"
             font.family: Theme.fontFamily
-            font.pixelSize: 13
+            font.pixelSize: Theme.s * 13
             horizontalAlignment: Text.AlignHCenter
             lineHeight: 1.4
         }
@@ -104,9 +104,9 @@ Rectangle {
 
         Row {
             anchors.fill: parent
-            anchors.leftMargin: 6
-            anchors.rightMargin: 10
-            spacing: 8
+            anchors.leftMargin: Theme.s * 6
+            anchors.rightMargin: Theme.s * 10
+            spacing: Theme.s * 8
 
             Item {
                 width: btnSize
@@ -115,9 +115,9 @@ Rectangle {
 
                 Rectangle {
                     anchors.centerIn: parent
-                    width: 30
-                    height: 26
-                    radius: 4
+                    width: Theme.s * 30
+                    height: Theme.s * 26
+                    radius: Theme.s * 4
                     color: backBtnArea.pressed ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
 
                     Canvas {
@@ -153,7 +153,7 @@ Rectangle {
                 text: controller ? controller.videoTitle : ""
                 color: "#FFFFFF"
                 font.family: Theme.fontFamily
-                font.pixelSize: 13
+                font.pixelSize: Theme.s * 13
                 font.bold: true
                 elide: Text.ElideRight
                 width: parent.width - btnSize - 24
@@ -182,9 +182,9 @@ Rectangle {
 
         Row {
             anchors.fill: parent
-            anchors.leftMargin: 6
-            anchors.rightMargin: 10
-            spacing: 10
+            anchors.leftMargin: Theme.s * 6
+            anchors.rightMargin: Theme.s * 10
+            spacing: Theme.s * 10
 
             Item {
                 width: btnSize
@@ -193,9 +193,9 @@ Rectangle {
 
                 Rectangle {
                     anchors.centerIn: parent
-                    width: 30
-                    height: 26
-                    radius: 4
+                    width: Theme.s * 30
+                    height: Theme.s * 26
+                    radius: Theme.s * 4
                     color: playBtnArea.pressed ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
 
                     Canvas {
@@ -269,9 +269,9 @@ Rectangle {
                 text: controller ? controller.playbackProgressText : "00:00 / 00:00"
                 color: "#FFFFFF"
                 font.family: Theme.fontFamily
-                font.pixelSize: 12
+                font.pixelSize: Theme.s * 12
                 anchors.verticalCenter: parent.verticalCenter
-                width: 112
+                width: Theme.s * 112
                 elide: Text.ElideRight
             }
 

@@ -5,8 +5,8 @@ import ".."
 
 Rectangle {
     id: seasonPage
-    width: 320
-    height: 170
+    width: parent ? parent.width : 320
+    height: parent ? parent.height : 170
     color: Theme.bgPrimary
 
     property var controller: null
@@ -155,11 +155,11 @@ Rectangle {
 
     Rectangle {
         id: sortTitleButton
-        width: 42
+        width: Theme.s * 42
         height: titleBar.height
         anchors.top: titleBar.top
         anchors.right: titleBar.right
-        anchors.rightMargin: 6
+        anchors.rightMargin: Theme.s * 6
         color: "transparent"
         z: titleBar.z + 1
         opacity: seasonPage.sortBusy ? 0.55 : 1.0
@@ -167,8 +167,8 @@ Rectangle {
         Rectangle {
             id: sortTitleButtonCore
             anchors.centerIn: parent
-            width: 30
-            height: 24
+            width: Theme.s * 30
+            height: Theme.s * 24
             radius: Theme.radiusMedium
             color: sortTitleButtonArea.pressed && !seasonPage.sortBusy
                    ? Theme.withAlpha(Theme.primary, 0.22) : "transparent"
@@ -229,7 +229,7 @@ Rectangle {
 
     Rectangle {
         id: locateTitleButton
-        width: 42
+        width: Theme.s * 42
         height: titleBar.height
         anchors.top: titleBar.top
         anchors.right: sortTitleButton.left
@@ -339,12 +339,12 @@ Rectangle {
     Components.LoadMoreListView {
         id: seasonVideoList
         anchors.top: titleBar.bottom
-        anchors.topMargin: 4
+        anchors.topMargin: Theme.s * 4
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 8
-        spacing: 6
+        anchors.bottomMargin: Theme.s * 8
+        spacing: Theme.s * 6
         leftMargin: 8
         rightMargin: 8
         model: seasonPage.seasonModel
@@ -398,11 +398,11 @@ Rectangle {
                 visible: parent.current
                 anchors.top: parent.top
                 anchors.right: parent.right
-                anchors.topMargin: 4
-                anchors.rightMargin: 4
+                anchors.topMargin: Theme.s * 4
+                anchors.rightMargin: Theme.s * 4
                 width: currentText.implicitWidth + 10
-                height: 16
-                radius: 8
+                height: Theme.s * 16
+                radius: Theme.s * 8
                 color: Theme.primary
                 z: 3
 
@@ -421,9 +421,9 @@ Rectangle {
         Row {
             visible: seasonVideoList.count === 0 && controller && controller.isLoading
             anchors.left: parent.left
-            anchors.leftMargin: 8
+            anchors.leftMargin: Theme.s * 8
             anchors.verticalCenter: parent.verticalCenter
-            spacing: 6
+            spacing: Theme.s * 6
             Repeater {
                 model: 3
                 Components.VideoCardCompact {
@@ -464,8 +464,8 @@ Rectangle {
         visible: controller && controller.isLoading && seasonVideoList.count === 0
         anchors.centerIn: seasonVideoList
         width: loadingText.implicitWidth + 18
-        height: 22
-        radius: 11
+        height: Theme.s * 22
+        radius: Theme.s * 11
         color: Theme.withAlpha(Theme.bgSecondary, 0.95)
         border.color: Theme.borderLight
         border.width: 1

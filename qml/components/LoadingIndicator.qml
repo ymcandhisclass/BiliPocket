@@ -28,13 +28,13 @@ Item {
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter
-            spacing: 6
+            spacing: Theme.s * 6
 
             Repeater {
                 model: 3
                 Rectangle {
-                    width: 6; height: 6
-                    radius: 3
+                    width: Theme.s * 6; height: Theme.s * 6
+                    radius: Theme.s * 3
                     color: Theme.primary
                     opacity: 0.3
 
@@ -71,9 +71,9 @@ Item {
 
         Rectangle {
             visible: loadingRoot.cancelEnabled
-            height: 20
+            height: Theme.s * 20
             width: cancelTextItem.implicitWidth + 16
-            radius: 10
+            radius: Theme.s * 10
             color: cancelArea.pressed
                    ? Theme.withAlpha(Theme.primary, 0.18)
                    : Theme.withAlpha(Theme.primary, 0.08)

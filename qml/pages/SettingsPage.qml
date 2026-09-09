@@ -36,7 +36,7 @@ Rectangle {
 
             delegate: Rectangle {
                 width: parent.width
-                height: 36
+                height: Theme.s * 36
                 radius: Theme.radiusMedium
                 color: settingsItemArea.pressed ? Theme.withAlpha(Theme.primary, 0.12) : Theme.bgSecondary
                 border.color: Theme.withAlpha(Theme.primary, 0.12)
@@ -47,7 +47,7 @@ Rectangle {
                     text: model.title
                     color: Theme.textPrimary
                     font.family: Theme.fontFamily
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.s * 11
                     font.bold: true
                 }
 
@@ -160,7 +160,7 @@ Rectangle {
 
                 Rectangle {
                     width: parent.width
-                    height: 36
+                    height: Theme.s * 36
                     radius: Theme.radiusMedium
                     color: Theme.bgSecondary
                     border.color: Theme.withAlpha(Theme.primary, 0.12)
@@ -168,10 +168,10 @@ Rectangle {
 
                     Row {
                         anchors.fill: parent
-                        anchors.margins: 6
-                        spacing: 6
+                        anchors.margins: Theme.s * 6
+                        spacing: Theme.s * 6
 
-                        Text { text: "字幕颜色"; color: Theme.textPrimary; font.family: Theme.fontFamily; font.pixelSize: 11; width: 64; anchors.verticalCenter: parent.verticalCenter }
+                        Text { text: "字幕颜色"; color: Theme.textPrimary; font.family: Theme.fontFamily; font.pixelSize: Theme.s * 11; width: Theme.s * 64; anchors.verticalCenter: parent.verticalCenter }
 
                         Repeater {
                             model: [
@@ -182,9 +182,9 @@ Rectangle {
                             ]
 
                             Rectangle {
-                                width: 38
-                                height: 24
-                                radius: 6
+                                width: Theme.s * 38
+                                height: Theme.s * 24
+                                radius: Theme.s * 6
                                 color: controller && controller.subtitleColorPreset === modelData.key
                                        ? Theme.withAlpha(Theme.primary, 0.25)
                                        : Theme.bgTertiary
@@ -196,12 +196,12 @@ Rectangle {
 
                                 Row {
                                     anchors.centerIn: parent
-                                    spacing: 3
+                                    spacing: Theme.s * 3
 
                                     Rectangle {
-                                        width: 9
-                                        height: 9
-                                        radius: 4
+                                        width: Theme.s * 9
+                                        height: Theme.s * 9
+                                        radius: Theme.s * 4
                                         color: modelData.color
                                         border.width: modelData.key === "white" ? 1 : 0
                                         border.color: Theme.withAlpha(Theme.textPrimary, 0.4)
@@ -212,7 +212,7 @@ Rectangle {
                                         text: modelData.label
                                         color: Theme.textPrimary
                                         font.family: Theme.fontFamily
-                                        font.pixelSize: 9
+                                        font.pixelSize: Theme.s * 9
                                         anchors.verticalCenter: parent.verticalCenter
                                     }
                                 }
@@ -285,9 +285,9 @@ Rectangle {
         z: 92
 
         Rectangle {
-            width: 170
-            height: 70
-            radius: 10
+            width: Theme.s * 170
+            height: Theme.s * 70
+            radius: Theme.s * 10
             color: Theme.bgSecondary
             border.color: Theme.withAlpha(Theme.primary, 0.2)
             border.width: 1
@@ -295,8 +295,8 @@ Rectangle {
 
             Column {
                 anchors.fill: parent
-                anchors.margins: 10
-                spacing: 10
+                anchors.margins: Theme.s * 10
+                spacing: Theme.s * 10
 
                 Text {
                     text: "确认重启 Go 服务端？"
@@ -310,12 +310,12 @@ Rectangle {
 
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: 10
+                    spacing: Theme.s * 10
 
                     Rectangle {
-                        width: 56
-                        height: 24
-                        radius: 6
+                        width: Theme.s * 56
+                        height: Theme.s * 24
+                        radius: Theme.s * 6
                         color: cancelRestartArea.pressed ? Theme.withAlpha(Theme.primary, 0.12) : Theme.bgTertiary
 
                         Text {
@@ -334,9 +334,9 @@ Rectangle {
                     }
 
                     Rectangle {
-                        width: 56
-                        height: 24
-                        radius: 6
+                        width: Theme.s * 56
+                        height: Theme.s * 24
+                        radius: Theme.s * 6
                         color: confirmRestartArea.pressed ? Theme.primaryDark : Theme.primary
 
                         Text {

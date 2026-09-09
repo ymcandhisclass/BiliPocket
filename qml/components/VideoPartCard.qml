@@ -4,7 +4,7 @@ import ".."
 Item {
     id: card
     width: Theme.cardWidth
-    height: 60
+    height: Theme.s * 60
 
     property int pNumber: 1
     property string partTitle: "分P标题"
@@ -16,7 +16,7 @@ Item {
     Rectangle {
         id: background
         anchors.fill: parent
-        radius: 8
+        radius: Theme.s * 8
         
         color: card.isCurrent ? Theme.detailAccentDark : Qt.rgba(1, 1, 1, 0.07)
         border.color: card.isCurrent ? Theme.detailAccent : (mouseArea.pressed ? Theme.detailAccent : "transparent")
@@ -27,17 +27,17 @@ Item {
 
         Column {
             anchors.fill: parent
-            anchors.leftMargin: 8
-            anchors.rightMargin: 8
+            anchors.leftMargin: Theme.s * 8
+            anchors.rightMargin: Theme.s * 8
             anchors.top: parent.top
-            anchors.topMargin: 8
-            spacing: 4
+            anchors.topMargin: Theme.s * 8
+            spacing: Theme.s * 4
 
             Text {
                 text: "P" + card.pNumber
                 color: card.isCurrent ? "white" : Theme.detailAccentLight
                 font.family: Theme.fontFamily
-                font.pixelSize: 10
+                font.pixelSize: Theme.s * 10
                 font.bold: true
             }
 
@@ -46,7 +46,7 @@ Item {
                 text: card.partTitle
                 color: card.isCurrent ? "white" : Theme.detailTextBright
                 font.family: Theme.fontFamily
-                font.pixelSize: 11
+                font.pixelSize: Theme.s * 11
                 elide: Text.ElideRight
                 maximumLineCount: 2
                 wrapMode: Text.Wrap
@@ -58,11 +58,11 @@ Item {
             text: card.durationText
             color: card.isCurrent ? Qt.rgba(255,255,255,0.7) : Theme.detailTextSecondary
             font.family: Theme.fontFamily
-            font.pixelSize: 9
+            font.pixelSize: Theme.s * 9
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            anchors.rightMargin: 8
-            anchors.bottomMargin: 6
+            anchors.rightMargin: Theme.s * 8
+            anchors.bottomMargin: Theme.s * 6
         }
 
         MouseArea {

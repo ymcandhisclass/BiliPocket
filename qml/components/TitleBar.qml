@@ -13,7 +13,7 @@ Rectangle {
     property string titleSuffix: ""
     property bool showBack: true
     property bool showSearch: false
-    property int titleSideReserve: 55
+    property real titleSideReserve: 55 * Theme.sv
 
     signal backClicked()
     signal searchClicked()
@@ -22,17 +22,17 @@ Rectangle {
     Rectangle {
         id: backBtn
         visible: showBack
-        width: 56
+        width: Theme.s * 56
         height: parent.height
         color: "transparent"
         anchors.left: parent.left
-        anchors.leftMargin: 10
+        anchors.leftMargin: Theme.s * 10
         anchors.verticalCenter: parent.verticalCenter
 
         Rectangle {
             id: backBtnCore
             anchors.centerIn: parent
-            width: 38; height: 22
+            width: Theme.s * 38; height: Theme.s * 22
             radius: Theme.radiusMedium
             color: backArea.pressed
             ? Theme.withAlpha(Theme.primary, 0.2) : "transparent"
@@ -41,7 +41,7 @@ Rectangle {
 
             Row {
                 anchors.centerIn: parent
-                spacing: 2
+                spacing: Theme.s * 2
 
                 Text {
                     text: "‹"
@@ -63,7 +63,7 @@ Rectangle {
         MouseArea {
             id: backArea
             anchors.fill: parent
-            anchors.margins: -10
+            anchors.margins: Theme.s * -10
             onClicked: titleBar.backClicked()
         }
     }
@@ -105,7 +105,7 @@ Rectangle {
     Rectangle {
         id: searchBtn
         visible: showSearch
-        width: 36
+        width: Theme.s * 36
         height: parent.height
         color: "transparent"
         anchors.right: parent.right
@@ -113,7 +113,7 @@ Rectangle {
 
         Rectangle {
             anchors.centerIn: parent
-            width: 28; height: 22
+            width: Theme.s * 28; height: Theme.s * 22
             radius: Theme.radiusMedium
             color: searchArea.pressed
             ? Theme.withAlpha(Theme.primary, 0.2) : "transparent"

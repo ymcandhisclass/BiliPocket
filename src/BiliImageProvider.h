@@ -6,8 +6,8 @@
 #include <QMutex>
 #include <QNetworkAccessManager>
 #include <QPointer>
-#include <QQuickAsyncImageProvider>
-#include <QQuickImageResponse>
+#include <QtQuick/QQuickAsyncImageProvider>
+#include <QtQuick/QQuickImageResponse>
 #include <QReadWriteLock>
 #include <QRunnable>
 #include <QThread>

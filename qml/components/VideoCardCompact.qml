@@ -120,7 +120,7 @@ Item {
     Rectangle {
         id: cardBg
         anchors.fill: parent
-        radius: 6
+        radius: Theme.s * 6
         color: Theme.bgSecondary
         border.color: card.isLastWatched ? Theme.accent : (mouseArea.pressed ? Theme.primary : "transparent")
         border.width: card.isLastWatched ? 2 : 1
@@ -130,12 +130,12 @@ Item {
         // 封面区 (高度约 65%)
         Rectangle {
             id: coverContainer
-            width: parent.width - 4
+            width: parent.width - Theme.s * 4
             height: parent.height * 0.58
             anchors.top: parent.top
             anchors.topMargin: 2
             anchors.horizontalCenter: parent.horizontalCenter
-            radius: 4
+            radius: Theme.s * 4
             color: Theme.bgTertiary
             clip: true
 
@@ -158,7 +158,7 @@ Item {
             Text {
                 visible: coverImage.status !== Image.Ready
                 text: "📺"
-                font.pixelSize: 18
+                font.pixelSize: Theme.s * 18
                 opacity: 0.3
                 anchors.centerIn: parent
             }
@@ -168,8 +168,8 @@ Item {
                 visible: !effectivePlaceholder && durationText.length > 0
                 anchors { right: parent.right; bottom: parent.bottom; margins: 3 }
                 width: durationLabel.width + 8
-                height: 14
-                radius: 3
+                height: Theme.s * 14
+                radius: Theme.s * 3
                 color: "#CC000000"
 
                 Text {
@@ -177,7 +177,7 @@ Item {
                     text: durationText
                     color: "#FFFFFF"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 9 * card.fontScale
+                    font.pixelSize: Theme.s * 9 * card.fontScale
                     font.bold: true
                     anchors.centerIn: parent
                 }
@@ -188,8 +188,8 @@ Item {
                 visible: !effectivePlaceholder && showCollection
                 anchors { left: parent.left; bottom: parent.bottom; leftMargin: 4; bottomMargin: 4 }
                 width: collectionText.implicitWidth + 10
-                height: 14
-                radius: 6
+                height: Theme.s * 14
+                radius: Theme.s * 6
                 color: Qt.rgba(0, 0, 0, 0.58)
                 border.width: 1
                 border.color: Qt.rgba(1, 1, 1, 0.18)
@@ -200,7 +200,7 @@ Item {
                     text: "选集"
                     color: "#F8FAFC"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 8
+                    font.pixelSize: Theme.s * 8
                     font.bold: true
                     anchors.centerIn: parent
                 }
@@ -211,8 +211,8 @@ Item {
                 visible: !effectivePlaceholder && card.isLastWatched
                 anchors { left: parent.left; top: parent.top; margins: 3 }
                 width: lastWatchedLabel.implicitWidth + 8
-                height: 14
-                radius: 7
+                height: Theme.s * 14
+                radius: Theme.s * 7
                 color: Theme.withAlpha(Theme.accent, 0.92)
                 border.width: 1
                 border.color: Theme.withAlpha(Theme.textOnPrimary, 0.28)
@@ -224,7 +224,7 @@ Item {
                     text: "上次"
                     color: Theme.textOnPrimary
                     font.family: Theme.fontFamily
-                    font.pixelSize: 8
+                    font.pixelSize: Theme.s * 8
                     font.bold: true
                 }
             }
@@ -233,15 +233,15 @@ Item {
             Rectangle {
                 visible: !effectivePlaceholder && showRank && rankIndex > 0
                 anchors { left: parent.left; top: parent.top; margins: 3 }
-                width: 16; height: 14
-                radius: 3
+                width: Theme.s * 16; height: Theme.s * 14
+                radius: Theme.s * 3
                 color: rankIndex <= 3 ? Theme.error : "#CC000000"
 
                 Text {
                     text: rankIndex
                     color: "#FFFFFF"
                     font.family: Theme.fontFamily
-                    font.pixelSize: 9
+                    font.pixelSize: Theme.s * 9
                     font.bold: true
                     anchors.centerIn: parent
                 }
@@ -289,7 +289,7 @@ Item {
                 text: videoTitle
                 color: Theme.textPrimary
                 font.family: Theme.fontFamily
-                font.pixelSize: 10 * card.fontScale * card.titleScale
+                font.pixelSize: Theme.s * 10 * card.fontScale * card.titleScale
                 font.bold: titleBold
                 maximumLineCount: 2
                 wrapMode: Text.Wrap
@@ -305,7 +305,7 @@ Item {
                 text: upName + (viewCount ? " · " + viewCount : "")
                 color: "#7A7A7A"
                 font.family: Theme.fontFamily
-                font.pixelSize: 8 * card.fontScale * card.subScale
+                font.pixelSize: Theme.s * 8 * card.fontScale * card.subScale
                 elide: Text.ElideRight
             }
         }
