@@ -2,10 +2,13 @@
 
 #include <QObject>
 #include <QMediaPlayer>
-#include <QAudioOutput>
-#include <QVideoSink>
 #include <QUrl>
 #include <QTimer>
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QAudioOutput>
+#include <QVideoSink>
+#endif
 
 class BiliVideoPlayer : public QObject {
     Q_OBJECT
@@ -14,7 +17,9 @@ class BiliVideoPlayer : public QObject {
     Q_PROPERTY(qint64 duration READ duration NOTIFY durationChanged)
     Q_PROPERTY(bool playing READ playing NOTIFY playingChanged)
     Q_PROPERTY(bool hasVideo READ hasVideo NOTIFY hasVideoChanged)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     Q_PROPERTY(QObject* videoSink READ videoSink CONSTANT)
+#endif
     Q_PROPERTY(QString errorString READ errorString NOTIFY errorOccurred)
 
 public:
@@ -34,7 +39,9 @@ public:
     qint64 duration() const;
     bool playing() const;
     bool hasVideo() const;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     QObject* videoSink() const;
+#endif
     QString errorString() const;
 
 signals:
@@ -50,16 +57,24 @@ signals:
 private slots:
     void onPositionChanged(qint64 pos);
     void onDurationChanged(qint64 dur);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     void onPlaybackStateChanged(QMediaPlayer::PlaybackState state);
+#else
+    void onStateChanged(QMediaPlayer::State state);
+#endif
     void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     void onErrorOccurred(QMediaPlayer::Error error, const QString& errorString);
     void onVideoSinkChanged();
+#endif
     void updateBufferingProgress();
 
 private:
     QMediaPlayer* m_player = nullptr;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     QAudioOutput* m_audioOutput = nullptr;
     QVideoSink* m_videoSink = nullptr;
+#endif
     QTimer* m_bufferTimer = nullptr;
     bool m_hasVideo = false;
 };
