@@ -156,27 +156,6 @@ void BiliPlaybackModule::requestPlayUrlInternal(int requestedQuality, bool audio
       });
 }
 
-        self->setIsLoading(false);
-
-        if (!videoUrl.isEmpty()) {
-          emit self->playbackReady(videoUrl);
-        }
-      },
-      [self, requestKey](int code, const QString &msg) {
-        if (!self)
-          return;
-        if (self->m_playUrlLoadingKey != requestKey)
-          return;
-
-        self->m_playUrlLoadingKey.clear();
-        self->clearPlayResult();
-        self->setIsLoading(false);
-        if (code == QNetworkReply::OperationCanceledError)
-          return;
-        emit self->toastMessage(QString("获取播放地址失败：%1").arg(msg));
-      });
-}
-
 // ====== 仅获取可用清晰度 ======
 
 void BiliPlaybackModule::fetchAcceptQualities(int quality) {
