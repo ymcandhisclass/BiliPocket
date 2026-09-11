@@ -36,9 +36,10 @@ jobs:
             qml-module-qtquick2 \
             qtquickcontrols2-5-dev \
             libqt5quickwidgets5 \
-            libqt5multimedia5-dev \
+            libqt5multimedia5 \
             libqt5multimedia5-plugins \
-            libqt5multimediawidgets5
+            libqt5multimediawidgets5 \
+            qtmultimedia5-dev
 
           # 安装 Go（项目需要）
           wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
