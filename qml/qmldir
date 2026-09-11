@@ -16,6 +16,7 @@ LoadMoreListView 1.0 components/LoadMoreListView.qml
 SkeletonPill 1.0 components/SkeletonPill.qml
 PopupStack 1.0 components/PopupStack.qml
 VirtualKeyboardInput 1.0 components/VirtualKeyboardInput.qml
+VideoPlayer 1.0 components/VideoPlayer.qml
 
 # Pages
 HomePage 1.0 pages/HomePage.qml
