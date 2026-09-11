@@ -36,7 +36,7 @@ jobs:
             qml-module-qtquick2 \
             qtquickcontrols2-5-dev \
             libqt5quickwidgets5 \
-            libqt5multimedia5 \
+            libqt5multimedia5-dev \
             libqt5multimedia5-plugins \
             libqt5multimediawidgets5
 
