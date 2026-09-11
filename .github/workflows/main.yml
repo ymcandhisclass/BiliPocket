@@ -2,9 +2,9 @@ name: Build BiliPocket Plugin
 
 on:
   push:
-    branches: [ YDP03X ]
+    branches: [ main ]
   pull_request:
-    branches: [ YDP03X ]
+    branches: [ main ]
 
 jobs:
   build:
