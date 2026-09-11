@@ -56,3 +56,9 @@ CI 环境用 clang 原生 x86_64 编译验证。
 - `BiliVideoPlayer.h` 需要 `#include <QMediaPlayer>`，xmake 需显式添加 Qt5 Multimedia include 路径（见 `xmake.lua`）
 - `BiliNetwork` 使用请求队列和速率限制 (10 req/s)，API 未就绪时请求排队
 - Go 服务器 Cookie 缓存在 `cookies.json`，启动时自动加载
+
+## Workflow
+
+- **每次修改完代码后，必须提交并 push 到 main 分支**
+- 提交信息使用中文，格式: `<type>: <description>`
+- 类型: `feat`(新功能) / `fix`(修复) / `docs`(文档) / `refactor`(重构)
