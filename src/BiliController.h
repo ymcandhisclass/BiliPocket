@@ -85,6 +85,7 @@ class BiliController : public QObject {
   Q_PROPERTY(QString videoSeasonCover READ videoSeasonCover NOTIFY videoDetailChanged)
   Q_PROPERTY(qint64 videoSeasonMid READ videoSeasonMid NOTIFY videoDetailChanged)
   Q_PROPERTY(int videoSeasonTotal READ videoSeasonTotal NOTIFY videoDetailChanged)
+  Q_PROPERTY(QStringList videoTagNames READ videoTagNames NOTIFY videoTagsChanged)
 
   // 播放地址
   Q_PROPERTY(QString playUrl READ playUrl NOTIFY playUrlChanged)
@@ -196,6 +197,7 @@ public:
   QString videoSeasonCover() const { return m_videoSeasonCover; }
   qint64 videoSeasonMid() const { return m_videoSeasonMid; }
   int videoSeasonTotal() const { return m_videoSeasonTotal; }
+  QStringList videoTagNames() const { return m_videoTagNames; }
 
   QString playUrl() const;
   int playQuality() const;
@@ -331,6 +333,7 @@ public:
 signals:
   void videoDetailChanged();
   void videoStatsChanged();
+  void videoTagsChanged();
   void playbackProgressChanged();
   void playUrlChanged();
   void acceptQualitiesChanged();
@@ -399,6 +402,9 @@ private:
   QString m_videoSeasonCover;
   qint64 m_videoSeasonMid = 0;
   int m_videoSeasonTotal = 0;
+  // 当前视频的 TAG 名称列表（末尾#标签），按拉取时的 bvid 归属
+  QStringList m_videoTagNames;
+  QString m_videoTagsBvid;
 
   struct VideoDetailSnapshot {
     VideoItem video;

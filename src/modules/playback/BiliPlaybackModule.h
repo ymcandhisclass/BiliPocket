@@ -17,10 +17,6 @@ public:
   Q_INVOKABLE void fetchAcceptQualities(int quality = 64);
   Q_INVOKABLE void cancelDownload();
   Q_INVOKABLE void cleanupTempSubtitle();
-  Q_INVOKABLE bool externalPlayerRunning() const;
-  Q_INVOKABLE void launchExternalPlayer(const QString &path);
-  Q_INVOKABLE void launchExternalPlayerWithAudioUrl(const QString &videoUrl, const QString &audioUrl);
-  Q_INVOKABLE void launchExternalPlayerWithAudioUrlAndSubtitle(const QString &videoUrl, const QString &audioUrl, const QString &subtitlePath);
   Q_INVOKABLE void fetchSubtitleList(bool silent = false);
   Q_INVOKABLE void selectSubtitle(qint64 subtitleId, const QString &label);
   Q_INVOKABLE void clearSelectedSubtitle();
@@ -41,19 +37,12 @@ public:
   bool ensureDefaultSubtitleForCurrentVideo(std::function<void()> onFinished);
 
 private:
-  // 按 fnval 发起播放地址请求；fnval=1 为 MP4 单流，4048 为 DASH 双流。
-  // allowDashFallback 为 true 时，MP4 不可用会自动回退 DASH。
-  void requestPlayUrlInternal(int requestedQuality, bool audioOnly, int fnval,
-                              bool allowDashFallback);
+  void requestPlayUrlInternal(int requestedQuality, bool audioOnly, int fnval);
   void fetchSubtitleListInternal(bool silent, std::function<void()> onFinished = nullptr);
   void runSubtitleListCallbacks(const QString &requestKey);
   bool shouldLoadDefaultSubtitle() const;
-  bool isExternalPlayerRunning() const;
-  QString externalPlayerTitle() const;
   int resumeStartSeconds() const;
   void appendResumeStartArg(QStringList &args) const;
-  bool startExternalPlayer(const QStringList &args);
-  void launchExternalPlayerWithSubtitle(const QString &path, const QString &subtitlePath);
   void downloadSelectedSubtitle(std::function<void(const QString &subtitlePath)> onFinished);
   BiliController *m_controller;
   QString m_subtitleCallbackKey;
