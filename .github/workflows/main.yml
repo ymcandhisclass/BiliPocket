@@ -1,0 +1,142 @@
+name: Build BiliPocket Plugin Test
+
+on:
+  push:
+    branches: [ test-ydp03x ]
+  pull_request:
+    branches: [ test-ydp03x ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: test-ydp03x
+
+      - name: Set up build environment
+        run: |
+          sudo apt-get update -y
+
+          # 安装系统依赖与 Qt 开发包（用于本机构建 x86_64）
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            binutils \
+            clang \
+            lld \
+            cmake \
+            git \
+            pkg-config \
+            wget \
+            zip \
+            qtbase5-dev \
+            qtdeclarative5-dev \
+            qml-module-qtquick2 \
+            qtquickcontrols2-5-dev \
+            libqt5quickwidgets5 \
+            libqt5multimedia5 \
+            libqt5multimedia5-plugins \
+            libqt5multimediawidgets5 \
+            qtmultimedia5-dev
+
+          # 安装 Go（项目需要）
+          wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
+          sudo tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
+          echo "/usr/local/go/bin" >> $GITHUB_PATH
+          go version
+
+      - name: Install xmake
+        run: |
+          if command -v xmake >/dev/null 2>&1; then
+            echo "xmake already installed: $(xmake --version)"
+            echo "$(dirname $(command -v xmake))" >> $GITHUB_PATH
+          else
+            if command -v curl >/dev/null 2>&1; then
+              curl -fsSL https://xmake.io/shget.text | bash -s --
+            else
+              wget -qO- https://xmake.io/shget.text | bash -s --
+            fi
+            echo "$HOME/.local/bin" >> $GITHUB_PATH
+          fi
+
+      - name: Fix Qt linking (create unversioned .so symlinks if needed)
+        run: |
+          set -e
+          TARGET_DIR=/usr/lib/x86_64-linux-gnu
+          echo "Checking for unversioned libQt5Multimedia.so in $TARGET_DIR..."
+          if [ -f "$TARGET_DIR/libQt5Multimedia.so" ]; then
+            echo "libQt5Multimedia.so already present"
+            exit 0
+          fi
+
+          CAND=$(find "$TARGET_DIR" /usr/lib -type f -name 'libQt5Multimedia.so.*' | head -n 1 || true)
+          if [ -n "$CAND" ]; then
+            echo "Found versioned Qt multimedia lib: $CAND"
+            sudo ln -sf "$CAND" "$TARGET_DIR/libQt5Multimedia.so"
+            sudo ldconfig
+            echo "Created symlink: $TARGET_DIR/libQt5Multimedia.so -> $CAND"
+            exit 0
+          fi
+
+          echo "未在 $TARGET_DIR 或 /usr/lib 中找到 libQt5Multimedia 的版本化库。"
+          exit 1
+
+      - name: Build Plugin with xmake (native x86_64 using clang)
+        env:
+          CC: clang
+          CXX: clang++
+          LD: ld.lld
+          PATH: ${{ env.PATH }}:/usr/local/go/bin:$HOME/.local/bin
+        run: |
+          echo "using CC=$(command -v $CC || true), CXX=$(command -v $CXX || true), LD=$(command -v $LD || true)"
+          xmake --version || true
+
+          # 显式指定平台为 linux，架构为 x86_64
+          xmake f -c -m release -p linux -a x86_64 -vD
+          xmake -vD
+
+      - name: Build Go services
+        run: |
+          export PATH=$PATH:/usr/local/go/bin
+          cd go_server
+          bash build.sh
+
+      - name: Fix package.sh path for x86_64
+        run: |
+          # 自动将 package.sh 中的 arm64-v8a 替换为 x86_64
+          sed -i 's/arm64-v8a/x86_64/g' package.sh
+
+      - name: Package plugin
+        run: |
+          bash package.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bili_plugin
+          path: bili_plugin.zip
+          retention-days: 30
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: BiliPocket ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bili_plugin.zip
+          asset_name: bili_plugin.zip
+          asset_content_type: application/zip
