@@ -19,52 +19,21 @@ jobs:
       - name: Set up build environment
         run: |
           sudo apt-get update -y
-
-          # 安装系统依赖与 Qt 开发包（用于本机构建 x86_64）
           sudo apt-get install -y --no-install-recommends \
-            build-essential \
-            binutils \
-            clang \
-            lld \
-            cmake \
-            git \
-            pkg-config \
-            wget \
-            zip \
-            qtbase5-dev \
-            qtdeclarative5-dev \
-            qml-module-qtquick2 \
-            qtquickcontrols2-5-dev \
-            libqt5quickwidgets5 \
-            libqt5multimedia5 \
-            libqt5multimedia5-plugins \
-            libqt5multimediawidgets5 \
-            qtmultimedia5-dev
+            build-essential binutils clang lld cmake git pkg-config wget zip \
+            qtbase5-dev qtdeclarative5-dev qml-module-qtquick2 \
+            qtquickcontrols2-5-dev libqt5quickwidgets5 \
+            libqt5multimedia5 libqt5multimedia5-plugins \
+            libqt5multimediawidgets5 qtmultimedia5-dev \
+            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
 
-          # 安装 aarch64 交叉编译工具链
-          sudo apt-get install -y --no-install-recommends \
-            gcc-aarch64-linux-gnu \
-            g++-aarch64-linux-gnu \
-            binutils-aarch64-linux-gnu
-
-          # 安装 Go（项目需要）
           wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
           sudo tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
-          echo "/usr/local/go/bin" >> $GITHUB_PATH
-          go version
 
-          # 安装 xmake
+      - name: Install xmake
+        run: |
           curl -fsSL https://xmake.io/shget.text | bash -s --
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Verify build tools
-        run: |
-          echo "=== 验证构建工具 ==="
-          which aarch64-linux-gnu-g++ || echo "ERROR: aarch64-linux-gnu-g++ not found"
-          which xmake || echo "ERROR: xmake not found"
-          which go || echo "ERROR: go not found"
-          aarch64-linux-gnu-g++ --version || true
-          xmake --version || true
 
       - name: Fix Qt linking
         run: |
@@ -74,40 +43,37 @@ jobs:
           if [ -n "$CAND" ]; then
             sudo ln -sf "$CAND" "$TARGET_DIR/libQt5Multimedia.so"
             sudo ldconfig
-            echo "Created symlink: $TARGET_DIR/libQt5Multimedia.so -> $CAND"
+            echo "Created symlink"
           fi
 
-      - name: Build Plugin x86_64
+      - name: Build Plugin x86_64 (验证编译)
         env:
           CC: clang
           CXX: clang++
           LD: ld.lld
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           echo "=== x86_64 构建 ==="
           xmake f -c -m release -p linux -a x86_64 -vD
           xmake -vD
           echo "x86_64 构建完成"
+          file build/linux/x86_64/release/libbili_plugin.so
 
-      - name: Build Plugin aarch64
+      - name: Build Plugin aarch64 (交叉编译)
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           echo "=== aarch64 交叉编译 ==="
-          
-          # 获取 Qt5 头文件路径
+
           QT_INC=$(pkg-config --cflags-only-I qt5 2>/dev/null | sed 's/-I//g' | head -1 || true)
           if [ -z "$QT_INC" ]; then
             QT_INC="/usr/include/x86_64-linux-gnu/qt5"
           fi
           echo "Qt include path: $QT_INC"
-          
-          # 创建输出目录
+
           mkdir -p build/linux/arm64-v8a/release
-          
-          # 收集所有源文件
+
           find src -name '*.cpp' > /tmp/srcs.txt
-          echo "Source files:"
-          cat /tmp/srcs.txt
-          
-          # 用 aarch64 交叉编译器编译
+
           aarch64-linux-gnu-g++ -std=c++17 -shared -fPIC -O2 \
             -I src \
             -I "$QT_INC" \
@@ -122,7 +88,7 @@ jobs:
             -o build/linux/arm64-v8a/release/libbili_plugin.so \
             -Wl,--no-undefined \
             -Wl,-rpath,'$$ORIGIN'
-          
+
           echo "=== 验证 aarch64 输出 ==="
           file build/linux/arm64-v8a/release/libbili_plugin.so
           readelf -h build/linux/arm64-v8a/release/libbili_plugin.so | grep -E 'Machine|Class'
