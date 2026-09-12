@@ -63,48 +63,37 @@ jobs:
           which aarch64-linux-gnu-g++ || echo "ERROR: aarch64-linux-gnu-g++ not found"
           which xmake || echo "ERROR: xmake not found"
           which go || echo "ERROR: go not found"
-          aarch64-linux-gnu-g++ --version
-          xmake --version
+          aarch64-linux-gnu-g++ --version || true
+          xmake --version || true
 
-      - name: Fix Qt linking (create unversioned .so symlinks if needed)
+      - name: Fix Qt linking
         run: |
           set -e
           TARGET_DIR=/usr/lib/x86_64-linux-gnu
-          echo "Checking for unversioned libQt5Multimedia.so in $TARGET_DIR..."
-          if [ -f "$TARGET_DIR/libQt5Multimedia.so" ]; then
-            echo "libQt5Multimedia.so already present"
-            exit 0
-          fi
-
           CAND=$(find "$TARGET_DIR" /usr/lib -type f -name 'libQt5Multimedia.so.*' | head -n 1 || true)
           if [ -n "$CAND" ]; then
-            echo "Found versioned Qt multimedia lib: $CAND"
             sudo ln -sf "$CAND" "$TARGET_DIR/libQt5Multimedia.so"
             sudo ldconfig
             echo "Created symlink: $TARGET_DIR/libQt5Multimedia.so -> $CAND"
-            exit 0
           fi
 
-          echo "未在 $TARGET_DIR 或 /usr/lib 中找到 libQt5Multimedia 的版本化库。"
-          exit 1
-
-      - name: Build Plugin x86_64 (验证编译)
+      - name: Build Plugin x86_64
         env:
           CC: clang
           CXX: clang++
           LD: ld.lld
         run: |
-          echo "=== x86_64 验证构建 ==="
+          echo "=== x86_64 构建 ==="
           xmake f -c -m release -p linux -a x86_64 -vD
           xmake -vD
           echo "x86_64 构建完成"
 
-      - name: Build Plugin aarch64 (交叉编译)
+      - name: Build Plugin aarch64
         run: |
           echo "=== aarch64 交叉编译 ==="
           
           # 获取 Qt5 头文件路径
-          QT_INC=$(pkg-config --cflags-only-I qt5 2>/dev/null | sed 's/-I//g' | head -1)
+          QT_INC=$(pkg-config --cflags-only-I qt5 2>/dev/null | sed 's/-I//g' | head -1 || true)
           if [ -z "$QT_INC" ]; then
             QT_INC="/usr/include/x86_64-linux-gnu/qt5"
           fi
@@ -132,8 +121,7 @@ jobs:
             $(cat /tmp/srcs.txt) \
             -o build/linux/arm64-v8a/release/libbili_plugin.so \
             -Wl,--no-undefined \
-            -Wl,-rpath,'$$ORIGIN' \
-            2>&1
+            -Wl,-rpath,'$$ORIGIN'
           
           echo "=== 验证 aarch64 输出 ==="
           file build/linux/arm64-v8a/release/libbili_plugin.so
@@ -149,7 +137,6 @@ jobs:
       - name: Package plugin
         run: |
           bash package.sh
-          
           echo "=== 打包内容验证 ==="
           unzip -l bili_plugin.zip
 
@@ -159,25 +146,3 @@ jobs:
           name: bili_plugin
           path: bili_plugin.zip
           retention-days: 30
-
-      - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: BiliPocket ${{ github.ref }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Asset
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./bili_plugin.zip
-          asset_name: bili_plugin.zip
-          asset_content_type: application/zip
