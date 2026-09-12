@@ -107,7 +107,7 @@ jobs:
         run: |
           echo "=== aarch64 交叉编译 ==="
           
-          # 获取 Qt5 头文件路径（架构无关，x86_64 的头文件可用于 aarch64 编译）
+          # 获取 Qt5 头文件路径
           QT_INC=$(pkg-config --cflags-only-I qt5 2>/dev/null | sed 's/-I//g' | head -1)
           if [ -z "$QT_INC" ]; then
             QT_INC="/usr/include/x86_64-linux-gnu/qt5"
@@ -123,7 +123,6 @@ jobs:
           cat /tmp/srcs.txt
           
           # 用 aarch64 交叉编译器编译
-          # 注意：不链接 Qt 库，运行时由 DictPen 进程提供符号
           aarch64-linux-gnu-g++ -std=c++17 -shared -fPIC -O2 \
             -I src \
             -I "$QT_INC" \
