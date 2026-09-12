@@ -2,7 +2,7 @@ name: Build BiliPocket Plugin
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, fix/* ]
   pull_request:
     branches: [ main ]
 
@@ -14,7 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          ref: main
+          ref: ${{ github.ref }}
 
       - name: Set up build environment
         run: |
@@ -40,6 +40,12 @@ jobs:
             libqt5multimedia5-plugins \
             libqt5multimediawidgets5 \
             qtmultimedia5-dev
+
+          # 安装 aarch64 交叉编译工具链
+          sudo apt-get install -y --no-install-recommends \
+            gcc-aarch64-linux-gnu \
+            g++-aarch64-linux-gnu \
+            binutils-aarch64-linux-gnu
 
           # 安装 Go（项目需要）
           wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
@@ -83,19 +89,61 @@ jobs:
           echo "未在 $TARGET_DIR 或 /usr/lib 中找到 libQt5Multimedia 的版本化库。"
           exit 1
 
-      - name: Build Plugin with xmake (native x86_64 using clang)
+      - name: Build Plugin x86_64 (验证编译)
         env:
           CC: clang
           CXX: clang++
           LD: ld.lld
           PATH: ${{ env.PATH }}:/usr/local/go/bin:$HOME/.local/bin
         run: |
-          echo "using CC=$(command -v $CC || true), CXX=$(command -v $CXX || true), LD=$(command -v $LD || true)"
-          xmake --version || true
-
-          # 显式指定平台为 linux，架构为 x86_64
+          echo "=== x86_64 验证构建 ==="
           xmake f -c -m release -p linux -a x86_64 -vD
           xmake -vD
+          echo "x86_64 构建完成"
+
+      - name: Build Plugin aarch64 (交叉编译)
+        env:
+          PATH: ${{ env.PATH }}:/usr/local/go/bin:$HOME/.local/bin
+        run: |
+          echo "=== aarch64 交叉编译 ==="
+          
+          # 获取 Qt5 头文件路径（架构无关，x86_64 的头文件可用于 aarch64 编译）
+          QT_INC=$(pkg-config --cflags-only-I qt5 2>/dev/null | sed 's/-I//g' | head -1)
+          if [ -z "$QT_INC" ]; then
+            QT_INC="/usr/include/x86_64-linux-gnu/qt5"
+          fi
+          echo "Qt include path: $QT_INC"
+          
+          # 创建输出目录
+          mkdir -p build/linux/arm64-v8a/release
+          
+          # 收集所有源文件
+          find src -name '*.cpp' > /tmp/srcs.txt
+          echo "Source files:"
+          cat /tmp/srcs.txt
+          
+          # 用 aarch64 交叉编译器编译
+          # 注意：不链接 Qt 库，运行时由 DictPen 进程提供符号
+          aarch64-linux-gnu-g++ -std=c++17 -shared -fPIC -O2 \
+            -I src \
+            -I "$QT_INC" \
+            -I "$QT_INC/QtCore" \
+            -I "$QT_INC/QtQuick" \
+            -I "$QT_INC/QtQml" \
+            -I "$QT_INC/QtNetwork" \
+            -I "$QT_INC/QtMultimedia" \
+            -I "$QT_INC/QtGui" \
+            -DQT_NO_KEYWORDS \
+            $(cat /tmp/srcs.txt) \
+            -o build/linux/arm64-v8a/release/libbili_plugin.so \
+            -Wl,--no-undefined \
+            -Wl,-rpath,'$$ORIGIN' \
+            2>&1
+          
+          echo "=== 验证 aarch64 输出 ==="
+          file build/linux/arm64-v8a/release/libbili_plugin.so
+          readelf -h build/linux/arm64-v8a/release/libbili_plugin.so | grep -E 'Machine|Class'
+          echo "aarch64 构建完成"
 
       - name: Build Go services
         run: |
@@ -103,14 +151,12 @@ jobs:
           cd go_server
           bash build.sh
 
-      - name: Fix package.sh path for x86_64
-        run: |
-          # 自动将 package.sh 中的 arm64-v8a 替换为 x86_64
-          sed -i 's/arm64-v8a/x86_64/g' package.sh
-
       - name: Package plugin
         run: |
           bash package.sh
+          
+          echo "=== 打包内容验证 ==="
+          unzip -l bili_plugin.zip
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
