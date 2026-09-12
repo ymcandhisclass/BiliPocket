@@ -53,19 +53,18 @@ jobs:
           echo "/usr/local/go/bin" >> $GITHUB_PATH
           go version
 
-      - name: Install xmake
+          # 安装 xmake
+          curl -fsSL https://xmake.io/shget.text | bash -s --
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Verify build tools
         run: |
-          if command -v xmake >/dev/null 2>&1; then
-            echo "xmake already installed: $(xmake --version)"
-            echo "$(dirname $(command -v xmake))" >> $GITHUB_PATH
-          else
-            if command -v curl >/dev/null 2>&1; then
-              curl -fsSL https://xmake.io/shget.text | bash -s --
-            else
-              wget -qO- https://xmake.io/shget.text | bash -s --
-            fi
-            echo "$HOME/.local/bin" >> $GITHUB_PATH
-          fi
+          echo "=== 验证构建工具 ==="
+          which aarch64-linux-gnu-g++ || echo "ERROR: aarch64-linux-gnu-g++ not found"
+          which xmake || echo "ERROR: xmake not found"
+          which go || echo "ERROR: go not found"
+          aarch64-linux-gnu-g++ --version
+          xmake --version
 
       - name: Fix Qt linking (create unversioned .so symlinks if needed)
         run: |
@@ -94,7 +93,6 @@ jobs:
           CC: clang
           CXX: clang++
           LD: ld.lld
-          PATH: ${{ env.PATH }}:/usr/local/go/bin:$HOME/.local/bin
         run: |
           echo "=== x86_64 验证构建 ==="
           xmake f -c -m release -p linux -a x86_64 -vD
@@ -102,8 +100,6 @@ jobs:
           echo "x86_64 构建完成"
 
       - name: Build Plugin aarch64 (交叉编译)
-        env:
-          PATH: ${{ env.PATH }}:/usr/local/go/bin:$HOME/.local/bin
         run: |
           echo "=== aarch64 交叉编译 ==="
           
