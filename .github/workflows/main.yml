@@ -76,11 +76,30 @@ jobs:
 
           find src -name '*.cpp' > /tmp/srcs.txt
 
+          # 关键：先运行 Qt moc 生成 moc_*.cpp（提供 staticMetaObject / qt_metacall / vtable 依赖），
+          # 否则 Q_OBJECT 类的 vtable 无 key function 定义，dlopen 报 undefined symbol: _ZTV14BiliController
+          echo "=== 运行 moc 生成 meta 代码 ==="
+          MOC=$(command -v moc || find /usr -name moc -type f 2>/dev/null | head -n1)
+          echo "moc: $MOC"
+          if [ -z "$MOC" ]; then MOC=$(find /usr/lib -name moc -type f 2>/dev/null | head -n1); fi
+          echo "moc resolved: $MOC"
+          mkdir -p /tmp/moc_build
+          MOC_CPPS=""
+          for hdr in $(grep -rlE 'Q_OBJECT' src --include='*.h'); do
+            base=$(basename "$hdr" .h)
+            outp="/tmp/moc_build/moc_${base}.cpp"
+            # 提取类名推导 moc 输出名是 moc_<filename>，直接用头文件
+            "$MOC" -I src -I "$QT_INC" -I "$QT_INC/QtCore" -I "$QT_INC/QtQuick" -I "$QT_INC/QtQml" -I "$QT_INC/QtNetwork" -I "$QT_INC/QtMultimedia" -I "$QT_INC/QtGui" "$hdr" -o "$outp" && echo "  moc -> $outp" || echo "  moc FAILED: $hdr"
+            MOC_CPPS="$MOC_CPPS $outp"
+          done
+          echo "=== moc 生成文件列表 ==="
+          find /tmp/moc_build -name '*.cpp' | sort
+
           # 关键：不 -DQT_NO_KEYWORDS（代码依赖 signals/slots/emit），
           # 不链接 Qt（宿主 DictPen 进程已加载 Qt，符号运行时解析），
           # 用 Zig 指定 glibc 2.27（设备 glibc=2.27，Ubuntu 工具链会引入 GLIBC_2.32 符号导致 dlopen 失败）
           # --no-gc-sections：插件无显式 new BiliController（QML 引擎运行时创建），
-          #   链接器可能裁剪 vtable/静态 init 段，导致 dlopen 时 undefined symbol: _ZTV14BiliController
+          #   防止链接器裁剪 vtable/静态 init 段
           zig c++ -target aarch64-linux-gnu.2.27 \
             -std=c++17 -shared -fPIC -O2 -s \
             -Wl,--no-gc-sections \
@@ -93,6 +112,7 @@ jobs:
             -I "$QT_INC/QtMultimedia" \
             -I "$QT_INC/QtGui" \
             $(cat /tmp/srcs.txt) \
+            $(find /tmp/moc_build -name '*.cpp') \
             -o build/linux/arm64-v8a/release/libbili_plugin.so
 
           echo "=== 验证 aarch64 输出 ==="
@@ -104,8 +124,10 @@ jobs:
           readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | grep init_plugin
           echo "=== vtable 必须已定义 (GLOBAL DEFAULT, 非 UND) ==="
           readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | grep _ZTV14BiliController
+          echo "=== BiliController::staticMetaObject 必须已定义 ==="
+          readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | grep -E '_ZN14BiliController16staticMetaObjectE'
           echo "=== 所有 UND 符号 (应只允许 libQt/libc/glibc 家族) ==="
-          readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | awk '$7=="UND"{print $8}' | sort -u | grep -vE '^(_ZTV|_ZT[IS]|_ZN[0-9]+QObject|_ZN[0-9]+Q[A-Z]|__cxa|_Unwind|_ITM|__gmon|GLIBC|libc_|pthread|dl_|memcpy|memset|memmove|strlen|strcmp|qIsNull|qIsFinite|qt|NativeQt|_PRETTY_FUNCTION_|__dso_handle|_edata|__bss_start|_end|std::)' || true
+          readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | awk '$7=="UND"{print $8}' | sort -u | grep -vE '^(_ZTV|_ZT[IS]|_ZN[0-9]+QObject|_ZN[0-9]+Q[A-Z]|_ZNK[0-9]+Q[A-Z]|__cxa|_Unwind|_ITM|__gmon|GLIBC|libc_|pthread|dl_|memcpy|memset|memmove|strlen|strcmp|qIsNull|qIsFinite|qt|NativeQt|_PRETTY_FUNCTION_|__dso_handle|_edata|__bss_start|_end|std::)' || true
           echo "aarch64 构建完成"
 
       - name: Build Go services
