@@ -159,7 +159,20 @@ jobs:
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: bili_plugin
           path: bili_plugin.zip
           retention-days: 30
+
+      - name: Upload build diagnostics (on failure)
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: build-diagnostics
+          path: |
+            /tmp/zig_build.log
+            /tmp/moc_build/
+            /tmp/srcs.txt
+            /tmp/moc_err.log
+          retention-days: 7
