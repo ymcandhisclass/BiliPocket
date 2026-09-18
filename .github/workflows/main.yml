@@ -79,8 +79,11 @@ jobs:
           # 关键：不 -DQT_NO_KEYWORDS（代码依赖 signals/slots/emit），
           # 不链接 Qt（宿主 DictPen 进程已加载 Qt，符号运行时解析），
           # 用 Zig 指定 glibc 2.27（设备 glibc=2.27，Ubuntu 工具链会引入 GLIBC_2.32 符号导致 dlopen 失败）
+          # --no-gc-sections：插件无显式 new BiliController（QML 引擎运行时创建），
+          #   链接器可能裁剪 vtable/静态 init 段，导致 dlopen 时 undefined symbol: _ZTV14BiliController
           zig c++ -target aarch64-linux-gnu.2.27 \
             -std=c++17 -shared -fPIC -O2 -s \
+            -Wl,--no-gc-sections \
             -I src \
             -I "$QT_INC" \
             -I "$QT_INC/QtCore" \
@@ -99,6 +102,10 @@ jobs:
           readelf -V build/linux/arm64-v8a/release/libbili_plugin.so | grep -oE 'GLIBC_[0-9.]+' | sort -u
           echo "=== init_plugin 必须导出 ==="
           readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | grep init_plugin
+          echo "=== vtable 必须已定义 (GLOBAL DEFAULT, 非 UND) ==="
+          readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | grep _ZTV14BiliController
+          echo "=== 所有 UND 符号 (应只允许 libQt/libc/glibc 家族) ==="
+          readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | awk '$7=="UND"{print $8}' | sort -u | grep -vE '^(_ZTV|_ZT[IS]|_ZN[0-9]+QObject|_ZN[0-9]+Q[A-Z]|__cxa|_Unwind|_ITM|__gmon|GLIBC|libc_|pthread|dl_|memcpy|memset|memmove|strlen|strcmp|qIsNull|qIsFinite|qt|NativeQt|_PRETTY_FUNCTION_|__dso_handle|_edata|__bss_start|_end|std::)' || true
           echo "aarch64 构建完成"
 
       - name: Build Go services
