@@ -89,7 +89,8 @@ jobs:
             base=$(basename "$hdr" .h)
             outp="/tmp/moc_build/moc_${base}.cpp"
             # 提取类名推导 moc 输出名是 moc_<filename>，直接用头文件
-            "$MOC" -I src -I "$QT_INC" -I "$QT_INC/QtCore" -I "$QT_INC/QtQuick" -I "$QT_INC/QtQml" -I "$QT_INC/QtNetwork" -I "$QT_INC/QtMultimedia" -I "$QT_INC/QtGui" "$hdr" -o "$outp" && echo "  moc -> $outp" || echo "  moc FAILED: $hdr"
+            "$MOC" -I src -I "$QT_INC" -I "$QT_INC/QtCore" -I "$QT_INC/QtQuick" -I "$QT_INC/QtQml" -I "$QT_INC/QtNetwork" -I "$QT_INC/QtMultimedia" -I "$QT_INC/QtGui" "$hdr" -o "$outp" || { echo "  moc FAILED: $hdr"; exit 1; }
+            echo "  moc -> $outp"
             MOC_CPPS="$MOC_CPPS $outp"
           done
           echo "=== moc 生成文件列表 ==="
@@ -113,7 +114,10 @@ jobs:
             -I "$QT_INC/QtGui" \
             $(cat /tmp/srcs.txt) \
             $(find /tmp/moc_build -name '*.cpp') \
-            -o build/linux/arm64-v8a/release/libbili_plugin.so
+            -o build/linux/arm64-v8a/release/libbili_plugin.so > /tmp/zig_build.log 2>&1 || { echo "=== ZIG BUILD FAILED ==="; tail -100 /tmp/zig_build.log; exit 1; }
+
+          echo "=== ZIG 构建输出摘要 ==="
+          grep -E 'error|warning|undefined' /tmp/zig_build.log | head -40 || true
 
           echo "=== 验证 aarch64 输出 ==="
           file build/linux/arm64-v8a/release/libbili_plugin.so
