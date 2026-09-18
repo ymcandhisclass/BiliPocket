@@ -19,7 +19,7 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y --no-install-recommends \
             build-essential binutils clang pkg-config wget zip file \
-            qtbase5-dev qtdeclarative5-dev qml-module-qtquick2 \
+            qtbase5-dev qtbase5-dev-tools qtdeclarative5-dev qml-module-qtquick2 \
             qtquickcontrols2-5-dev libqt5quickwidgets5 \
             libqt5multimedia5 libqt5multimedia5-plugins \
             libqt5multimediawidgets5 qtmultimedia5-dev
@@ -78,23 +78,29 @@ jobs:
 
           # 关键：先运行 Qt moc 生成 moc_*.cpp（提供 staticMetaObject / qt_metacall / vtable 依赖），
           # 否则 Q_OBJECT 类的 vtable 无 key function 定义，dlopen 报 undefined symbol: _ZTV14BiliController
-          echo "=== 运行 moc 生成 meta 代码 ==="
-          MOC=$(command -v moc || find /usr -name moc -type f 2>/dev/null | head -n1)
-          echo "moc: $MOC"
-          if [ -z "$MOC" ]; then MOC=$(find /usr/lib -name moc -type f 2>/dev/null | head -n1); fi
-          echo "moc resolved: $MOC"
+          echo "=== 定位 moc ==="
+          export PATH="/usr/lib/qt5/bin:/usr/lib/x86_64-linux-gnu/qt5/bin:$PATH"
+          MOC=""
+          for cand in /usr/lib/qt5/bin/moc /usr/lib/x86_64-linux-gnu/qt5/bin/moc $(command -v moc 2>/dev/null) /usr/bin/moc; do
+            if [ -x "$cand" ] && [ -n "$cand" ]; then MOC="$cand"; break; fi
+          done
+          echo "moc = $MOC"
+          ls -la /usr/lib/qt5/bin/ 2>/dev/null | head -5 || true
+          if [ -z "$MOC" ]; then echo "FATAL: moc not found"; exit 1; fi
           mkdir -p /tmp/moc_build
           MOC_CPPS=""
           for hdr in $(grep -rlE 'Q_OBJECT' src --include='*.h'); do
             base=$(basename "$hdr" .h)
             outp="/tmp/moc_build/moc_${base}.cpp"
             # 提取类名推导 moc 输出名是 moc_<filename>，直接用头文件
-            "$MOC" -I src -I "$QT_INC" -I "$QT_INC/QtCore" -I "$QT_INC/QtQuick" -I "$QT_INC/QtQml" -I "$QT_INC/QtNetwork" -I "$QT_INC/QtMultimedia" -I "$QT_INC/QtGui" "$hdr" -o "$outp" || { echo "  moc FAILED: $hdr"; exit 1; }
+            "$MOC" -I src -I "$QT_INC" -I "$QT_INC/QtCore" -I "$QT_INC/QtQuick" -I "$QT_INC/QtQml" -I "$QT_INC/QtNetwork" -I "$QT_INC/QtMultimedia" -I "$QT_INC/QtGui" "$hdr" -o "$outp" 2>/tmp/moc_err.log || { echo "  moc FAILED: $hdr"; cat /tmp/moc_err.log; exit 1; }
             echo "  moc -> $outp"
             MOC_CPPS="$MOC_CPPS $outp"
           done
           echo "=== moc 生成文件列表 ==="
           find /tmp/moc_build -name '*.cpp' | sort
+          echo "=== moc 版本 ==="
+          "$MOC" --version
 
           # 关键：不 -DQT_NO_KEYWORDS（代码依赖 signals/slots/emit），
           # 不链接 Qt（宿主 DictPen 进程已加载 Qt，符号运行时解析），
