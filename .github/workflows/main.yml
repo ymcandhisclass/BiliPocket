@@ -67,10 +67,14 @@ jobs:
 
       - name: Build Plugin aarch64 (交叉编译, Zig + glibc 2.27)
         run: |
+          set -x
+          exec > /tmp/aarch64_step.log 2>&1
           echo "=== aarch64 交叉编译 (Zig, glibc 2.27) ==="
 
           QT_INC=/usr/include/x86_64-linux-gnu/qt5
           echo "Qt include path: $QT_INC"
+          which zig && zig version
+          echo "zig PATH check done"
 
           mkdir -p build/linux/arm64-v8a/release
 
@@ -107,6 +111,7 @@ jobs:
           # 用 Zig 指定 glibc 2.27（设备 glibc=2.27，Ubuntu 工具链会引入 GLIBC_2.32 符号导致 dlopen 失败）
           # --no-gc-sections：插件无显式 new BiliController（QML 引擎运行时创建），
           #   防止链接器裁剪 vtable/静态 init 段
+          echo "=== 开始 zig 编译 ==="
           zig c++ -target aarch64-linux-gnu.2.27 \
             -std=c++17 -shared -fPIC -O2 -s \
             -Wl,--no-gc-sections \
@@ -120,12 +125,9 @@ jobs:
             -I "$QT_INC/QtGui" \
             $(cat /tmp/srcs.txt) \
             $(find /tmp/moc_build -name '*.cpp') \
-            -o build/linux/arm64-v8a/release/libbili_plugin.so > /tmp/zig_build.log 2>&1 || { echo "=== ZIG BUILD FAILED ==="; tail -100 /tmp/zig_build.log; exit 1; }
+            -o build/linux/arm64-v8a/release/libbili_plugin.so || { echo "=== ZIG BUILD FAILED ==="; exit 1; }
 
-          echo "=== ZIG 构建输出摘要 ==="
-          grep -E 'error|warning|undefined' /tmp/zig_build.log | head -40 || true
-
-          echo "=== 验证 aarch64 输出 ==="
+          echo "=== ZIG 构建成功 ==="
           file build/linux/arm64-v8a/release/libbili_plugin.so
           readelf -h build/linux/arm64-v8a/release/libbili_plugin.so | grep -E 'Machine|Class'
           echo "=== GLIBC 版本需求 (必须 ≤2.27，设备 glibc 版本) ==="
@@ -171,7 +173,7 @@ jobs:
         with:
           name: build-diagnostics
           path: |
-            /tmp/zig_build.log
+            /tmp/aarch64_step.log
             /tmp/moc_build/
             /tmp/srcs.txt
             /tmp/moc_err.log
