@@ -133,13 +133,21 @@ jobs:
           echo "=== GLIBC 版本需求 (必须 ≤2.27，设备 glibc 版本) ==="
           readelf -V build/linux/arm64-v8a/release/libbili_plugin.so | grep -oE 'GLIBC_[0-9.]+' | sort -u
           echo "=== init_plugin 必须导出 ==="
-          readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | grep init_plugin
+          readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | grep init_plugin || { echo "FATAL: init_plugin 未导出"; exit 1; }
           echo "=== vtable 必须已定义 (GLOBAL DEFAULT, 非 UND) ==="
-          readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | grep _ZTV14BiliController
-          echo "=== BiliController::staticMetaObject 必须已定义 ==="
-          readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | grep -E '_ZN14BiliController16staticMetaObjectE'
+          readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | grep _ZTV14BiliController || { echo "FATAL: BiliController vtable 未定义"; exit 1; }
+          echo "=== 所有 Q_OBJECT vtable 必须已定义 (UND 的 _ZTV 应为 0) ==="
+          VT_UND=$(readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | awk '$7=="UND"{print $8}' | grep -cE '^_ZTV' || true)
+          echo "UND vtable 数量: $VT_UND"
+          [ "$VT_UND" = "0" ] || { echo "FATAL: 存在未定义的 vtable，moc 未覆盖全部 Q_OBJECT"; exit 1; }
+          echo "=== staticMetaObject 定义位置 (moc 生成，内部引用; 未导出属正常) ==="
+          if readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | grep -qE '_ZN14BiliController16staticMetaObjectE'; then
+            echo "staticMetaObject: 已导出"
+          else
+            echo "staticMetaObject: 未在 .dynsym 导出（内部引用，正常）"
+          fi
           echo "=== 所有 UND 符号 (应只允许 libQt/libc/glibc 家族) ==="
-          readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | awk '$7=="UND"{print $8}' | sort -u | grep -vE '^(_ZTV|_ZT[IS]|_ZN[0-9]+QObject|_ZN[0-9]+Q[A-Z]|_ZNK[0-9]+Q[A-Z]|__cxa|_Unwind|_ITM|__gmon|GLIBC|libc_|pthread|dl_|memcpy|memset|memmove|strlen|strcmp|qIsNull|qIsFinite|qt|NativeQt|_PRETTY_FUNCTION_|__dso_handle|_edata|__bss_start|_end|std::)' || true
+          readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | awk '$7=="UND"{print $8}' | sort -u | grep -vE '^(_ZT[ISV]|_ZN[0-9]+QObject|_ZN[0-9]+Q[A-Z]|_ZNK[0-9]+Q[A-Z]|__cxa|_Unwind|_ITM|__gmon|GLIBC|libc_|pthread|dl_|memcpy|memset|memmove|strlen|strcmp|qIsNull|qIsFinite|qt|NativeQt|_PRETTY_FUNCTION_|__dso_handle|_edata|__bss_start|_end|std::)' || echo "OK: 无非 Qt/libc UND 符号"
           echo "aarch64 构建完成"
 
       - name: Build Go services
