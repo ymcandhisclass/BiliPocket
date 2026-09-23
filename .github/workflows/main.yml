@@ -2,7 +2,7 @@ name: Build BiliPocket Plugin
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, fix/* ]
   pull_request:
     branches: [ main ]
 
@@ -12,90 +12,143 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          ref: main
+        uses: actions/checkout@v4
 
       - name: Set up build environment
         run: |
           sudo apt-get update -y
-
-          # 安装系统依赖与 Qt 开发包（用于本机构建 x86_64）
           sudo apt-get install -y --no-install-recommends \
-            build-essential \
-            binutils \
-            clang \
-            lld \
-            cmake \
-            git \
-            pkg-config \
-            wget \
-            zip \
-            qtbase5-dev \
-            qtdeclarative5-dev \
-            qml-module-qtquick2 \
-            qtquickcontrols2-5-dev \
-            libqt5quickwidgets5 \
-            libqt5multimedia5 \
-            libqt5multimedia5-plugins \
-            libqt5multimediawidgets5 \
-            qtmultimedia5-dev
+            build-essential binutils clang pkg-config wget zip file \
+            qtbase5-dev qtbase5-dev-tools qtdeclarative5-dev qml-module-qtquick2 \
+            qtquickcontrols2-5-dev libqt5quickwidgets5 \
+            libqt5multimedia5 libqt5multimedia5-plugins \
+            libqt5multimediawidgets5 qtmultimedia5-dev
 
-          # 安装 Go（项目需要）
           wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
           sudo tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
-          echo "/usr/local/go/bin" >> $GITHUB_PATH
-          go version
+
+      - name: Install Zig
+        run: |
+          ZIG_VERSION=0.13.0
+          wget -q https://ziglang.org/download/${ZIG_VERSION}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz
+          tar -xf zig-linux-x86_64-${ZIG_VERSION}.tar.xz
+          sudo mv zig-linux-x86_64-${ZIG_VERSION} /opt/zig
+          sudo ln -sf /opt/zig/zig /usr/local/bin/zig
+          zig version
 
       - name: Install xmake
         run: |
-          if command -v xmake >/dev/null 2>&1; then
-            echo "xmake already installed: $(xmake --version)"
-            echo "$(dirname $(command -v xmake))" >> $GITHUB_PATH
-          else
-            if command -v curl >/dev/null 2>&1; then
-              curl -fsSL https://xmake.io/shget.text | bash -s --
-            else
-              wget -qO- https://xmake.io/shget.text | bash -s --
-            fi
-            echo "$HOME/.local/bin" >> $GITHUB_PATH
-          fi
+          curl -fsSL https://xmake.io/shget.text | bash -s --
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Fix Qt linking (create unversioned .so symlinks if needed)
+      - name: Fix Qt linking
         run: |
           set -e
           TARGET_DIR=/usr/lib/x86_64-linux-gnu
-          echo "Checking for unversioned libQt5Multimedia.so in $TARGET_DIR..."
-          if [ -f "$TARGET_DIR/libQt5Multimedia.so" ]; then
-            echo "libQt5Multimedia.so already present"
-            exit 0
-          fi
-
           CAND=$(find "$TARGET_DIR" /usr/lib -type f -name 'libQt5Multimedia.so.*' | head -n 1 || true)
           if [ -n "$CAND" ]; then
-            echo "Found versioned Qt multimedia lib: $CAND"
             sudo ln -sf "$CAND" "$TARGET_DIR/libQt5Multimedia.so"
             sudo ldconfig
-            echo "Created symlink: $TARGET_DIR/libQt5Multimedia.so -> $CAND"
-            exit 0
+            echo "Created symlink libQt5Multimedia.so"
           fi
 
-          echo "未在 $TARGET_DIR 或 /usr/lib 中找到 libQt5Multimedia 的版本化库。"
-          exit 1
-
-      - name: Build Plugin with xmake (native x86_64 using clang)
+      - name: Build Plugin x86_64 (验证编译)
         env:
           CC: clang
           CXX: clang++
           LD: ld.lld
-          PATH: ${{ env.PATH }}:/usr/local/go/bin:$HOME/.local/bin
         run: |
-          echo "using CC=$(command -v $CC || true), CXX=$(command -v $CXX || true), LD=$(command -v $LD || true)"
-          xmake --version || true
-
-          # 显式指定平台为 linux，架构为 x86_64
+          export PATH="$HOME/.local/bin:$PATH"
+          echo "=== x86_64 构建 ==="
           xmake f -c -m release -p linux -a x86_64 -vD
           xmake -vD
+          echo "x86_64 构建完成"
+          file build/linux/x86_64/release/libbili_plugin.so
+
+      - name: Build Plugin aarch64 (交叉编译, Zig + glibc 2.27)
+        run: |
+          set -x
+          exec > /tmp/aarch64_step.log 2>&1
+          echo "=== aarch64 交叉编译 (Zig, glibc 2.27) ==="
+
+          QT_INC=/usr/include/x86_64-linux-gnu/qt5
+          echo "Qt include path: $QT_INC"
+          which zig && zig version
+          echo "zig PATH check done"
+
+          mkdir -p build/linux/arm64-v8a/release
+
+          find src -name '*.cpp' > /tmp/srcs.txt
+
+          # 关键：先运行 Qt moc 生成 moc_*.cpp（提供 staticMetaObject / qt_metacall / vtable 依赖），
+          # 否则 Q_OBJECT 类的 vtable 无 key function 定义，dlopen 报 undefined symbol: _ZTV14BiliController
+          echo "=== 定位 moc ==="
+          export PATH="/usr/lib/qt5/bin:/usr/lib/x86_64-linux-gnu/qt5/bin:$PATH"
+          MOC=""
+          for cand in /usr/lib/qt5/bin/moc /usr/lib/x86_64-linux-gnu/qt5/bin/moc $(command -v moc 2>/dev/null) /usr/bin/moc; do
+            if [ -x "$cand" ] && [ -n "$cand" ]; then MOC="$cand"; break; fi
+          done
+          echo "moc = $MOC"
+          ls -la /usr/lib/qt5/bin/ 2>/dev/null | head -5 || true
+          if [ -z "$MOC" ]; then echo "FATAL: moc not found"; exit 1; fi
+          mkdir -p /tmp/moc_build
+          MOC_CPPS=""
+          for hdr in $(grep -rlE 'Q_OBJECT' src --include='*.h'); do
+            base=$(basename "$hdr" .h)
+            outp="/tmp/moc_build/moc_${base}.cpp"
+            # 提取类名推导 moc 输出名是 moc_<filename>，直接用头文件
+            "$MOC" -I src -I "$QT_INC" -I "$QT_INC/QtCore" -I "$QT_INC/QtQuick" -I "$QT_INC/QtQml" -I "$QT_INC/QtNetwork" -I "$QT_INC/QtMultimedia" -I "$QT_INC/QtGui" "$hdr" -o "$outp" 2>/tmp/moc_err.log || { echo "  moc FAILED: $hdr"; cat /tmp/moc_err.log; exit 1; }
+            echo "  moc -> $outp"
+            MOC_CPPS="$MOC_CPPS $outp"
+          done
+          echo "=== moc 生成文件列表 ==="
+          find /tmp/moc_build -name '*.cpp' | sort
+          echo "=== moc 版本 ==="
+          "$MOC" --version
+
+          # 关键：不 -DQT_NO_KEYWORDS（代码依赖 signals/slots/emit），
+          # 不链接 Qt（宿主 DictPen 进程已加载 Qt，符号运行时解析），
+          # 用 Zig 指定 glibc 2.27（设备 glibc=2.27，Ubuntu 工具链会引入 GLIBC_2.32 符号导致 dlopen 失败）
+          # --no-gc-sections：插件无显式 new BiliController（QML 引擎运行时创建），
+          #   防止链接器裁剪 vtable/静态 init 段
+          echo "=== 开始 zig 编译 ==="
+          zig c++ -target aarch64-linux-gnu.2.27 \
+            -std=c++17 -shared -fPIC -O2 -s \
+            -Wl,--no-gc-sections \
+            -I src \
+            -I "$QT_INC" \
+            -I "$QT_INC/QtCore" \
+            -I "$QT_INC/QtQuick" \
+            -I "$QT_INC/QtQml" \
+            -I "$QT_INC/QtNetwork" \
+            -I "$QT_INC/QtMultimedia" \
+            -I "$QT_INC/QtGui" \
+            $(cat /tmp/srcs.txt) \
+            $(find /tmp/moc_build -name '*.cpp') \
+            -o build/linux/arm64-v8a/release/libbili_plugin.so || { echo "=== ZIG BUILD FAILED ==="; exit 1; }
+
+          echo "=== ZIG 构建成功 ==="
+          file build/linux/arm64-v8a/release/libbili_plugin.so
+          readelf -h build/linux/arm64-v8a/release/libbili_plugin.so | grep -E 'Machine|Class'
+          echo "=== GLIBC 版本需求 (必须 ≤2.27，设备 glibc 版本) ==="
+          readelf -V build/linux/arm64-v8a/release/libbili_plugin.so | grep -oE 'GLIBC_[0-9.]+' | sort -u
+          echo "=== init_plugin 必须导出 ==="
+          readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | grep init_plugin || { echo "FATAL: init_plugin 未导出"; exit 1; }
+          echo "=== vtable 必须已定义 (GLOBAL DEFAULT, 非 UND) ==="
+          readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | grep _ZTV14BiliController || { echo "FATAL: BiliController vtable 未定义"; exit 1; }
+          echo "=== 所有 Q_OBJECT vtable 必须已定义 (UND 的 _ZTV 应为 0) ==="
+          VT_UND=$(readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | awk '$7=="UND"{print $8}' | grep -cE '^_ZTV' || true)
+          echo "UND vtable 数量: $VT_UND"
+          [ "$VT_UND" = "0" ] || { echo "FATAL: 存在未定义的 vtable，moc 未覆盖全部 Q_OBJECT"; exit 1; }
+          echo "=== staticMetaObject 定义位置 (moc 生成，内部引用; 未导出属正常) ==="
+          if readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | grep -qE '_ZN14BiliController16staticMetaObjectE'; then
+            echo "staticMetaObject: 已导出"
+          else
+            echo "staticMetaObject: 未在 .dynsym 导出（内部引用，正常）"
+          fi
+          echo "=== 所有 UND 符号 (应只允许 libQt/libc/glibc 家族) ==="
+          readelf --dyn-syms build/linux/arm64-v8a/release/libbili_plugin.so | awk '$7=="UND"{print $8}' | sort -u | grep -vE '^(_ZT[ISV]|_ZN[0-9]+QObject|_ZN[0-9]+Q[A-Z]|_ZNK[0-9]+Q[A-Z]|__cxa|_Unwind|_ITM|__gmon|GLIBC|libc_|pthread|dl_|memcpy|memset|memmove|strlen|strcmp|qIsNull|qIsFinite|qt|NativeQt|_PRETTY_FUNCTION_|__dso_handle|_edata|__bss_start|_end|std::)' || echo "OK: 无非 Qt/libc UND 符号"
+          echo "aarch64 构建完成"
 
       - name: Build Go services
         run: |
@@ -103,40 +156,33 @@ jobs:
           cd go_server
           bash build.sh
 
-      - name: Fix package.sh path for x86_64
-        run: |
-          # 自动将 package.sh 中的 arm64-v8a 替换为 x86_64
-          sed -i 's/arm64-v8a/x86_64/g' package.sh
-
       - name: Package plugin
         run: |
+          export PATH="$HOME/.local/bin:$PATH"
           bash package.sh
+          echo "=== 打包内容验证 ==="
+          unzip -l bili_plugin.zip
+          unzip -p bili_plugin.zip bili_plugin/libbili_plugin.so > /tmp/check_arch.so
+          file /tmp/check_arch.so
+          echo "=== 确认打包的是 aarch64 版本 ==="
+          readelf -h /tmp/check_arch.so | grep -E 'Machine'
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: bili_plugin
           path: bili_plugin.zip
           retention-days: 30
 
-      - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload build diagnostics (on failure)
+        uses: actions/upload-artifact@v4
+        if: failure()
         with:
-          tag_name: ${{ github.ref }}
-          release_name: BiliPocket ${{ github.ref }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Asset
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./bili_plugin.zip
-          asset_name: bili_plugin.zip
-          asset_content_type: application/zip
+          name: build-diagnostics
+          path: |
+            /tmp/aarch64_step.log
+            /tmp/moc_build/
+            /tmp/srcs.txt
+            /tmp/moc_err.log
+          retention-days: 7

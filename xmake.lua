@@ -30,6 +30,9 @@ target('bili_plugin')
 
     -- 显式添加 Qt5 Multimedia 头文件路径（xmake 的 add_frameworks 对 Qt5 Multimedia 支持不完善）
     if is_plat('linux') then
-        add_includedirs('/usr/include/x86_64-linux-gnu/qt5/QtMultimedia')
-        add_includedirs('/usr/include/x86_64-linux-gnu/qt5/QtMultimedia')
+        if is_arch('x86_64') then
+            add_includedirs('/usr/include/x86_64-linux-gnu/qt5/QtMultimedia')
+        elseif is_arch('arm64', 'aarch64') then
+            add_includedirs('/usr/include/aarch64-linux-gnu/qt5/QtMultimedia')
+        end
     end
