@@ -47,7 +47,10 @@ echo "使用: $SO_PATH"
 file "$SO_PATH"
 cp "$SO_PATH" ./bili_plugin
 
-cp -r ./qml ./bili_plugin
+# QML 作为名为 BiliPlugin 的模块目录部署，使 `import BiliPlugin 1.0` 能解析：
+# attach_engine() 把 <plugin>/qml 加入 import path，Qt 会查找 <plugin>/qml/BiliPlugin/qmldir
+mkdir -p ./bili_plugin/qml/BiliPlugin
+cp -r ./qml/. ./bili_plugin/qml/BiliPlugin/
 cp metadata.json ./bili_plugin
 cp icon.png ./bili_plugin
 
