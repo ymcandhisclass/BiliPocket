@@ -2,9 +2,33 @@
 #include "BiliVideoStats.h"
 
 #include <QDateTime>
+#include <QFile>
 #include <QtGlobal>
 
 namespace {
+
+// 首帧把真实布局写进 video_stats.log 一次，便于核对 UV 偏移（排查色度错位用）
+void logFrameLayoutOnce(const QVideoFrame& frame, int alignedH, qint64 uvOffset) {
+    static bool logged = false;
+    if (logged)
+        return;
+    logged = true;
+
+    QFile file(QStringLiteral("/userdisk/PenMods/plugins/bili_plugin/video_stats.log"));
+    if (!file.open(QIODevice::Append | QIODevice::Text))
+        return;
+    file.write(QStringLiteral("[%1] layout fmt=%2 %3x%4 stride=%5 mapped=%6 alignedH=%7 uvOffset=%8")
+                   .arg(QDateTime::currentDateTime().toString("HH:mm:ss"))
+                   .arg(int(frame.pixelFormat()))
+                   .arg(frame.width())
+                   .arg(frame.height())
+                   .arg(frame.bytesPerLine())
+                   .arg(frame.mappedBytes())
+                   .arg(alignedH)
+                   .arg(uvOffset)
+                   .toUtf8());
+    file.write("\n");
+}
 
 inline int clamp8(int v) {
     return v < 0 ? 0 : (v > 255 ? 255 : v);
@@ -16,6 +40,10 @@ inline int clamp8(int v) {
 // 640x360 @ 7.5fps（解码单独有 86fps），是画面卡顿的真正原因；
 // 而我们自己这份整数实现单帧只要 1~2ms，可以直接吃解码器的 NV12 输出，
 // 从而把 videoconvert 从管道里彻底去掉。
+//
+// 注意 UV 平面偏移：设备上 Rockchip MPP 解码器输出的 NV12 缓冲按 16 行对齐
+// （640x360 的实际 ver_stride 是 368，整帧 471040 = 640x368x2 字节），
+// 直接按 stride*height 取 UV 会错位 8 行色度 —— 表现为画面出现绿/紫摩纹。
 QImage convertNv12ToRgb32(const QVideoFrame& frame, bool uvSwapped) {
     const int w = frame.width();
     const int h = frame.height();
@@ -25,9 +53,19 @@ QImage convertNv12ToRgb32(const QVideoFrame& frame, bool uvSwapped) {
         return QImage();
 
     const uchar* yPlane = base;
-    const uchar* uvPlane = base + qint64(stride) * h; // NV12: UV 平面紧跟在 Y 平面之后
-    const int uvEvenOffset = uvSwapped ? 1 : 0;       // NV21 = V 在前
+
+    // 垂直对齐到 16 行；并用 mappedBytes() 兜底校验，避免越界读
+    const int alignedH = (h + 15) & ~15;
+    const qint64 uvRows = (h + 1) / 2;
+    qint64 uvOffset = qint64(stride) * alignedH;
+    if (uvOffset + qint64(stride) * uvRows > frame.mappedBytes())
+        uvOffset = qint64(stride) * h; // 上游是紧凑布局时的兜底
+
+    const uchar* uvPlane = base + uvOffset;
+    const int uvEvenOffset = uvSwapped ? 1 : 0; // NV21 = V 在前
     const int uvOddOffset = uvSwapped ? 0 : 1;
+
+    logFrameLayoutOnce(frame, alignedH, uvOffset);
 
     QImage out(w, h, QImage::Format_RGB32);
     if (out.isNull())
