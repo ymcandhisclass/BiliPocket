@@ -1,4 +1,7 @@
 #include "BiliVideoSurface.h"
+#include "BiliVideoStats.h"
+
+#include <QDateTime>
 
 BiliVideoSurface::BiliVideoSurface(QObject* parent) : QAbstractVideoSurface(parent) {}
 
@@ -26,6 +29,8 @@ bool BiliVideoSurface::present(const QVideoFrame& frame) {
     if (!f.map(QAbstractVideoBuffer::ReadOnly))
         return false;
 
+    const qint64 startMs = QDateTime::currentMSecsSinceEpoch();
+
     const QImage::Format imgFmt = QVideoFrame::imageFormatFromPixelFormat(f.pixelFormat());
     QImage image;
     if (imgFmt != QImage::Format_Invalid) {
@@ -35,6 +40,10 @@ bool BiliVideoSurface::present(const QVideoFrame& frame) {
 
     if (image.isNull())
         return false;
+
+    // 统计（卡顿排查用）：这里是解码帧进入插件的第一站，拷贝耗时能反映 CPU 侧开销
+    biliVideoStatsTick("surface", int(image.sizeInBytes()),
+                       (QDateTime::currentMSecsSinceEpoch() - startMs) * 1000);
 
     emit frameReady(image);
     return true;

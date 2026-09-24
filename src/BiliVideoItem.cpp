@@ -1,5 +1,7 @@
 #include "BiliVideoItem.h"
+#include "BiliVideoStats.h"
 
+#include <QDateTime>
 #include <QMutexLocker>
 #include <QQuickWindow>
 #include <QSGSimpleTextureNode>
@@ -41,10 +43,13 @@ QSGNode* BiliVideoItem::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData*) 
         return oldNode;
     }
 
+    const qint64 startMs = QDateTime::currentMSecsSinceEpoch();
     QSGTexture* texture = window()->createTextureFromImage(image);
     if (!texture) {
         return oldNode;
     }
+    biliVideoStatsTick("paint", int(image.sizeInBytes()),
+                       (QDateTime::currentMSecsSinceEpoch() - startMs) * 1000);
 
     QSGSimpleTextureNode* node = static_cast<QSGSimpleTextureNode*>(oldNode);
     if (!node) {
