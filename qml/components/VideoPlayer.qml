@@ -1,5 +1,5 @@
 import QtQuick 2.15
-import QtQuick.Controls 2.15
+import QtMultimedia 5.15
 import BiliPlugin 1.0
 import "../components" as Components
 
@@ -281,19 +281,22 @@ Item {
                 width: Theme.s * 50
             }
 
-            // 进度条
-            Slider {
+            // 进度条（自绘：设备缺少 QtQuick.Controls 2，不能用 Slider）
+            Item {
                 id: progressBar
+                property real from: 0
+                property real to: 1
+                property real _seekPreview: 0
+                property real value: isSeeking ? _seekPreview : progress
+                readonly property real visualPosition: (to > from) ? Math.max(0, Math.min(1, (value - from) / (to - from))) : 0
+
                 width: parent.width - Theme.s * 50 - Theme.s * 50 - Theme.s * 24
                 height: Theme.s * 24
-                from: 0
-                to: 1
-                value: progress
-                stepSize: 0.001
-                hoverEnabled: true
 
-                background: Rectangle {
-                    implicitHeight: Theme.s * 4
+                Rectangle {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width
+                    height: Theme.s * 4
                     radius: Theme.s * 2
                     color: Qt.rgba(255, 255, 255, 0.3)
                     Rectangle {
@@ -304,32 +307,39 @@ Item {
                     }
                 }
 
-                handle: Rectangle {
+                Rectangle {
                     width: Theme.s * 12
                     height: Theme.s * 12
                     radius: Theme.s * 6
                     color: Theme.primary
                     border.color: "#FFFFFF"
                     border.width: 2
+                    anchors.verticalCenter: parent.verticalCenter
                     x: progressBar.visualPosition * (progressBar.width - width)
-                    y: (parent.height - height) / 2
                 }
 
-                onPressed: {
-                    isSeeking = true
-                }
+                MouseArea {
+                    anchors.fill: parent
 
-                onValueChanged: {
-                    if (isSeeking) {
-                        seekPosition = value * mediaPlayer.duration
+                    function applySeek(mx) {
+                        var frac = Math.max(0, Math.min(1, mx / progressBar.width))
+                        progressBar._seekPreview = frac
+                        seekPosition = frac * mediaPlayer.duration
                         currentTimeText.text = formatTime(seekPosition)
                     }
-                }
 
-                onReleased: {
-                    if (isSeeking) {
-                        mediaPlayer.setPosition(seekPosition)
-                        isSeeking = false
+                    onPressed: {
+                        isSeeking = true
+                        applySeek(mouse.x)
+                    }
+                    onPositionChanged: {
+                        if (isSeeking) applySeek(mouse.x)
+                    }
+                    onReleased: {
+                        if (isSeeking) {
+                            mediaPlayer.setPosition(seekPosition)
+                            isSeeking = false
+                        }
                     }
                 }
             }
@@ -429,9 +439,10 @@ Item {
                 height: Theme.s * 22
                 radius: Theme.s * 4
                 color: isLongPressActive ? Theme.accent : Theme.primary
-                padding: Theme.s * 6
+                width: speedText.implicitWidth + Theme.s * 12
 
                 Text {
+                    id: speedText
                     anchors.centerIn: parent
                     text: (isLongPressActive ? "⚡ " : "") + mediaPlayer.playbackRate.toFixed(1) + "x"
                     color: "#FFFFFF"
@@ -448,9 +459,10 @@ Item {
                 height: Theme.s * 22
                 radius: Theme.s * 4
                 color: Theme.warning
-                padding: Theme.s * 6
+                width: zoomText.implicitWidth + Theme.s * 12
 
                 Text {
+                    id: zoomText
                     anchors.centerIn: parent
                     text: "🔍 " + scale.toFixed(1) + "x"
                     color: "#000000"
