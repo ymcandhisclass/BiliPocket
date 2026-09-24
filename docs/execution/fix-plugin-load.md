@@ -24,6 +24,7 @@ Go server 在 `127.0.0.1:8000` 正常返回 API 端点列表。
 | v2 | GLIBC_2.32 不兼容 (`__libc_single_threaded`) | DictPen 日志 `version 'GLIBC_2.32' not found` | Zig `-target aarch64-linux-gnu.2.27`，产物 GLIBC ≤2.18 |
 | v3 | `undefined symbol: _ZTV14BiliController` | DictPen 日志 `Failed to load SO ... undefined symbol` | **CI 从未运行 moc**：Q_OBJECT 类缺少 key function，vtable/staticMetaObject 全为 UND |
 | v4 | 插件加载成功但**无法在插件管理打开** | 日志有 `Attaching engine` 但无 `=== BiliPlugin Loaded ===`；`qmlscene` 报 `module "BiliPlugin" is not installed` | QML **模块目录名错误**：`attach_engine()` 把 `<plugin>/qml` 加入 import path，`import BiliPlugin 1.0` 需 `<plugin>/qml/BiliPlugin/qmldir`，但打包把文件放在 `<plugin>/qml/` |
+| v5 | 模块修复后仍打不开主界面 | `VideoPlayer.qml` 编译失败（Loader status=3），`createComponent` 报 `Cannot assign to non-existent property padding` | `VideoPlayer.qml` 有多处设备不兼容：①`property qint64` 非法 QML 类型；②`import QtQuick.Controls 2`（设备无 Controls.2）；③用 `QMediaPlayer` 枚举却没 `import QtMultimedia`；④在普通 `Rectangle` 上用 Controls 专有属性 `padding`。均因 `VideoPlayer → PlayerPage → main.qml` 内联引用而级联导致整页失败 |
 
 ### v3 细节（关键）
 - `xmake` 通过 `add_rules('qt.shared')` 自动 moc，本地/CI 的 xmake 构建正常；
