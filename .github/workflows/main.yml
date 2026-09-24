@@ -28,6 +28,13 @@ jobs:
             libqt5multimedia5 libqt5multimedia5-plugins \
             libqt5multimediawidgets5 qtmultimedia5-dev
 
+          # Qt Quick 场景图头（qsgnode.h → QtGui/qopengl.h）会 include <GL/gl.h>，
+          # 缺了它 aarch64 交叉编译会以 "fatal error: 'GL/gl.h' file not found" 失败。
+          # 包名在 Ubuntu 22.04/24.04 上不同，两个都兜一下。
+          sudo apt-get install -y --no-install-recommends libgl-dev \
+            || sudo apt-get install -y --no-install-recommends libgl1-mesa-dev mesa-common-dev
+          ls -la /usr/include/GL/gl.h
+
           wget -q https://go.dev/dl/go1.21.0.linux-amd64.tar.gz
           sudo tar -C /usr/local -xzf go1.21.0.linux-amd64.tar.gz
 
