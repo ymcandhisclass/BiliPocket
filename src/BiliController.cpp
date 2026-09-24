@@ -661,6 +661,8 @@ public:
 
   explicit BiliApiServerManager(QObject *parent = nullptr) : QObject(parent) {}
 
+  ~BiliApiServerManager() override { stopWatchdog(); }
+
   void start(bool forceRestart, DoneCallback done) {
     if (m_busy) {
       // 调用方在调用前普遍已经关闸（setApiServerReady(false)），这里丢掉 done
@@ -708,9 +710,13 @@ public:
   // 这里定期探测端口，连续两次探不到才重启（避免偶发抖动打断正在进行的播放）。
   void startWatchdog() {
     if (m_watchdog) return;
-    m_watchdog = new QTimer(this);
-    m_watchdog->setInterval(WATCHDOG_INTERVAL_MS);
-    connect(m_watchdog, &QTimer::timeout, this, [this]() {
+    // 不挂 parent：manager 可能在别的线程创建，跨线程 setParent 会让 Qt 报
+    // "Cannot create children for a parent that is in a different thread"。
+    // 连接上下文用 timer 自身，保证回调在 timer 所在（GUI）线程执行。
+    QTimer *timer = new QTimer();
+    m_watchdog = timer;
+    timer->setInterval(WATCHDOG_INTERVAL_MS);
+    connect(timer, &QTimer::timeout, timer, [this]() {
       if (m_busy) return;
       probeAlive([this](bool alive) {
         if (alive) {
@@ -723,7 +729,14 @@ public:
         start(true, nullptr);
       });
     });
-    m_watchdog->start();
+    timer->start();
+  }
+
+  void stopWatchdog() {
+    if (!m_watchdog) return;
+    m_watchdog->stop();
+    m_watchdog->deleteLater();
+    m_watchdog = nullptr;
   }
 
 private:
