@@ -3,6 +3,7 @@
 #include <QAbstractVideoSurface>
 #include <QImage>
 #include <QList>
+#include <QVideoFrame>
 
 // 接收 QMediaPlayer 解码出的视频帧，转成 QImage 后发给 QML 渲染。
 // 设备上的 GStreamer 只会用 waylandsink（独立浮层），无法渲染进 QML VideoOutput，
