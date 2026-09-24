@@ -8,20 +8,25 @@ import (
 	"time"
 )
 
-// isBiliMediaURL 判断是否属于可代理的 B 站媒体（播放/下载 CDN）地址。
-func isBiliMediaURL(raw string) bool {
-	if !strings.HasPrefix(raw, "http://") && !strings.HasPrefix(raw, "https://") {
-		return false
-	}
+// isHTTPURL 判断是否为可代理的 http(s) 地址。
+func isHTTPURL(raw string) bool {
+	return strings.HasPrefix(raw, "http://") || strings.HasPrefix(raw, "https://")
+}
+
+// isLocalURL 判断是否已经是指向本机的地址（无需再代理）。
+func isLocalURL(raw string) bool {
 	u, err := url.Parse(raw)
-	if err != nil || u.Host == "" {
+	if err != nil {
 		return false
 	}
 	h := strings.ToLower(u.Hostname())
-	return strings.Contains(h, "bilivideo") ||
-		strings.Contains(h, "hdslb") ||
-		strings.Contains(h, "bilibili") ||
-		strings.Contains(h, "akamaized")
+	return h == "127.0.0.1" || h == "localhost" || h == "::1"
+}
+
+// shouldProxyURL：媒体字段里除本机地址外的所有 http(s) 地址都走代理。
+// （B 站会返回各种 CDN/PCDN 域名，无法穷举白名单，统一由服务器补 Referer。）
+func shouldProxyURL(raw string) bool {
+	return isHTTPURL(raw) && !isLocalURL(raw)
 }
 
 // mediaURLKeys 是需要改写为本地代理的媒体地址字段名。
@@ -40,8 +45,8 @@ func rewriteMediaURLs(r *http.Request, v interface{}) {
 	switch t := v.(type) {
 	case map[string]interface{}:
 		for k, val := range t {
-			if s, ok := val.(string); ok && mediaURLKeys[k] && isBiliMediaURL(s) {
-				t[k] = localProxyURL(r, s)
+			if mediaURLKeys[k] {
+				rewriteMediaValue(r, t, k, val)
 				continue
 			}
 			rewriteMediaURLs(r, val)
@@ -49,6 +54,22 @@ func rewriteMediaURLs(r *http.Request, v interface{}) {
 	case []interface{}:
 		for _, val := range t {
 			rewriteMediaURLs(r, val)
+		}
+	}
+}
+
+// rewriteMediaValue 处理媒体字段的值：字符串或字符串数组。
+func rewriteMediaValue(r *http.Request, m map[string]interface{}, key string, v interface{}) {
+	switch t := v.(type) {
+	case string:
+		if shouldProxyURL(t) {
+			m[key] = localProxyURL(r, t)
+		}
+	case []interface{}:
+		for i, e := range t {
+			if s, ok := e.(string); ok && shouldProxyURL(s) {
+				t[i] = localProxyURL(r, s)
+			}
 		}
 	}
 }
@@ -72,8 +93,8 @@ func handleVideoProxy(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "url 为必填参数")
 		return
 	}
-	if !isBiliMediaURL(raw) {
-		writeError(w, 400, "仅允许代理 B 站媒体地址")
+	if !isHTTPURL(raw) {
+		writeError(w, 400, "仅允许 http(s) 媒体地址")
 		return
 	}
 
