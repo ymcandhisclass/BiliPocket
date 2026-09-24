@@ -252,6 +252,8 @@ func handleVideoPlayurl(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(resp) > 0 {
+		// 把媒体地址改写为本地代理，服务器补 Referer，规避 B 站 CDN 403
+		rewriteMediaURLs(r, resp)
 		writeJSON(w, 200, resp)
 		return
 	}
