@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+# 失败时把 aarch64 构建日志推到 ci-log 分支，便于直接 raw 读取（无需登录）
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -186,3 +190,34 @@ jobs:
             /tmp/srcs.txt
             /tmp/moc_err.log
           retention-days: 7
+
+      - name: Publish aarch64 failure log to ci-log branch
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p /tmp/cilog
+          {
+            echo "sha: ${GITHUB_SHA}"
+            echo "run: ${GITHUB_RUN_ID}"
+            echo "=== /tmp/aarch64_step.log ==="
+            cat /tmp/aarch64_step.log 2>/dev/null || echo "(no /tmp/aarch64_step.log)"
+            echo
+            echo "=== /tmp/moc_err.log ==="
+            cat /tmp/moc_err.log 2>/dev/null || echo "(no moc_err.log)"
+            echo
+            echo "=== /tmp/moc_build ==="
+            ls -la /tmp/moc_build 2>/dev/null || true
+          } > /tmp/cilog/aarch64.log 2>&1
+
+          # 同时打到 job 日志，方便直接在网页上看
+          tail -n 120 /tmp/cilog/aarch64.log || true
+
+          cd /tmp/cilog
+          git init -q
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+          git checkout -q -b ci-log
+          git add -A
+          git commit -qm "ci: aarch64 构建失败日志 ${GITHUB_SHA}" || true
+          git push -q --force "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-log
