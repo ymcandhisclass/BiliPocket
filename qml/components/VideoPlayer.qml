@@ -63,7 +63,7 @@ Item {
     VideoOutput {
         id: videoOutput
         anchors.fill: parent
-        source: mediaPlayer.videoSink
+        source: mediaPlayer.outputSource
         fillMode: VideoOutput.PreserveAspectFit
         transform: [
             Translate { x: videoPlayer.panX; y: videoPlayer.panY },

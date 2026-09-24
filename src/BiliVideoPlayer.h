@@ -17,6 +17,8 @@ class BiliVideoPlayer : public QObject {
     Q_PROPERTY(qint64 duration READ duration NOTIFY durationChanged)
     Q_PROPERTY(bool playing READ playing NOTIFY playingChanged)
     Q_PROPERTY(bool hasVideo READ hasVideo NOTIFY hasVideoChanged)
+    // VideoOutput.source 绑定用：Qt6 返回 QVideoSink，Qt5 返回底层 QMediaPlayer
+    Q_PROPERTY(QObject* outputSource READ outputSource CONSTANT)
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     Q_PROPERTY(QObject* videoSink READ videoSink CONSTANT)
 #endif
@@ -39,6 +41,7 @@ public:
     qint64 duration() const;
     bool playing() const;
     bool hasVideo() const;
+    QObject* outputSource() const;
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     QObject* videoSink() const;
 #endif

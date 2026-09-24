@@ -100,6 +100,15 @@ bool BiliVideoPlayer::hasVideo() const {
     return m_hasVideo;
 }
 
+QObject* BiliVideoPlayer::outputSource() const {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    return m_videoSink;
+#else
+    // Qt5：QML VideoOutput 可直接以 QMediaPlayer 作为 source（内部 qobject_cast）
+    return m_player;
+#endif
+}
+
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 QObject* BiliVideoPlayer::videoSink() const {
     return m_videoSink;
