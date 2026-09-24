@@ -89,6 +89,18 @@ jobs:
 
           mkdir -p build/linux/arm64-v8a/release
 
+          # Qt Quick 场景图头（qsggeometry.h → QtGui/qopengl.h）会 include <GL/gl.h>。
+          # 注意：zig -target aarch64 使用的是自带的 aarch64 sysroot，**不会**搜索宿主
+          # 的 /usr/include，所以光 apt 装 libgl-dev 没用，必须把 GL 头单独放到一个
+          # 目录里再用 -I 指给 zig（只放 GL/KHR，避免把宿主 libc 头也带进来）。
+          echo "=== 准备 GL 头 shim ==="
+          ls -la /usr/include/GL/gl.h || true
+          mkdir -p /tmp/glshim/GL /tmp/glshim/KHR
+          cp -f /usr/include/GL/*.h /tmp/glshim/GL/ 2>/dev/null || true
+          cp -f /usr/include/KHR/*.h /tmp/glshim/KHR/ 2>/dev/null || true
+          ls /tmp/glshim/GL /tmp/glshim/KHR || true
+          [ -f /tmp/glshim/GL/gl.h ] || { echo "FATAL: /tmp/glshim/GL/gl.h 缺失（libgl-dev 没装？）"; exit 1; }
+
           find src -name '*.cpp' > /tmp/srcs.txt
 
           # 关键：先运行 Qt moc 生成 moc_*.cpp（提供 staticMetaObject / qt_metacall / vtable 依赖），
@@ -127,6 +139,7 @@ jobs:
             -std=c++17 -shared -fPIC -O2 -s \
             -Wl,--no-gc-sections \
             -I src \
+            -I /tmp/glshim \
             -I "$QT_INC" \
             -I "$QT_INC/QtCore" \
             -I "$QT_INC/QtQuick" \
