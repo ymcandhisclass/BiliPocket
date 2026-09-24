@@ -10,6 +10,7 @@
 | v1 | 有画面但**完全无声** | 设备扬声器通路不由 PCM 数据自动打开：默认 PCM 只是把数据写进 ALSA loopback（`hw:7,0,0`），loopback → 扬声器由 `eq_drc_process` 经 **ubus** 控制。不调用 `Open` 时 `Playback Path` 恒为 `OFF`，写进去的数据无人消费 | `BiliVideoPlayer` 播放前调 `ubus call eq_drc_process.output.rpc control '{"action":"Open"}'`，暂停/停止/销毁时调 `Close`（按引用计数成对调用） |
 | v2 | **拖动进度条后卡死** | 宿主重启后插件会复用上一个宿主遗留的 Go server，其 stdout 管道已随旧宿主断裂。Go 在写 fd 1/2 遇到 EPIPE 时默认 raise SIGPIPE 并**终止进程** —— seek 触发媒体流中断刚好会写一条 `[WARN] 代理媒体中断`，server 随即消失，之后所有请求全部失败 | Go 侧 `signal.Notify(SIGPIPE)` + 日志写失败后停止重试；插件侧把 server 的 stdout/stderr 重定向到 `server.log`（管道永不断裂），并新增 15s 保活探测，连续两次探不到才重启 server |
 | v3 | 播放卡顿 | `playurl` 返回的主地址常是 PCDN 多 CDN 节点（`*.mountaintoys.cn`、`*mcdn*`），笔上实测抖动大，playbin 反复 rebuffer（`gst-launch playbin` 日志可见周期性 `buffering 0% → 100%`） | 服务端 `preferDirectCDNURLs()`：把标准 `upos`/`bilivideo` CDN 地址提到 `url` 位，其余按优先级写回 `backup_url` |
+| v4 | d8cdca8 起**点开视频必崩**（宿主 SIGSEGV，guardian 自动拉起） | 开 core dump 后 gdb 抓到：`Program terminated with signal SIGSEGV`，`si_addr = 0x0`，`#0 QSGSimpleTextureNode::setTexture(QSGTexture*)+108` ← `#1 BiliVideoItem::updatePaintNode()`（崩在 **QSG Render Thread**）。Qt 源码里 `setTexture()` 开头是 `Q_ASSERT(texture)`，随后 `qsgsimpletexturenode_update(..., texture, ...)` 直接解引用——**它不接受 nullptr**；而旧代码在没有帧时调用 `node->setTexture(nullptr)`，`createTextureFromImage()` 返回空时也会 | 首帧到达前/纹理创建失败时**不建节点、不调 setTexture**，直接返回旧节点（`return oldNode`） |
 
 ## 无声音：证据链
 

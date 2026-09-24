@@ -32,19 +32,28 @@ QSGNode* BiliVideoItem::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData*) 
         image = m_image;
     }
 
+    // 关键：QSGSimpleTextureNode::setTexture() 内部是
+    //   Q_ASSERT(texture); ... qsgsimpletexturenode_update(..., texture, ...);
+    // 也就是说它 **不接受 nullptr**（release 版没有断言，会直接在
+    // qsgsimpletexturenode_update 里空指针解引用，崩在 QSG Render Thread 上，已实测）。
+    // 首帧到达之前/纹理创建失败时不能建节点，直接沿用旧节点即可。
+    if (!window() || image.isNull() || image.width() <= 0 || image.height() <= 0) {
+        return oldNode;
+    }
+
+    QSGTexture* texture = window()->createTextureFromImage(image);
+    if (!texture) {
+        return oldNode;
+    }
+
     QSGSimpleTextureNode* node = static_cast<QSGSimpleTextureNode*>(oldNode);
     if (!node) {
         node = new QSGSimpleTextureNode();
+        // createTextureFromImage() 返回的纹理归调用方所有，交给节点释放旧纹理
         node->setOwnsTexture(true);
     }
 
-    if (image.isNull() || width() <= 0 || height() <= 0 || !window()) {
-        node->setTexture(nullptr);
-        node->setRect(QRectF());
-        return node;
-    }
-
-    node->setTexture(window()->createTextureFromImage(image));
+    node->setTexture(texture);
 
     const QRectF target(0, 0, width(), height());
     if (m_preserveAspectFit) {
