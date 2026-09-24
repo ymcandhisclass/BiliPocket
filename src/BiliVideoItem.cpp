@@ -1,9 +1,11 @@
 #include "BiliVideoItem.h"
 
-#include <QPainter>
 #include <QMutexLocker>
+#include <QQuickWindow>
+#include <QSGSimpleTextureNode>
+#include <QSGTexture>
 
-BiliVideoItem::BiliVideoItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
+BiliVideoItem::BiliVideoItem(QQuickItem* parent) : QQuickItem(parent) {
     setFlag(QQuickItem::ItemHasContents, true);
 }
 
@@ -23,25 +25,37 @@ void BiliVideoItem::clearFrame() {
     update();
 }
 
-void BiliVideoItem::paint(QPainter* painter) {
+QSGNode* BiliVideoItem::updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData*) {
     QImage image;
     {
         QMutexLocker locker(&m_mutex);
         image = m_image;
     }
-    if (image.isNull() || width() <= 0 || height() <= 0)
-        return;
 
-    painter->setRenderHint(QPainter::SmoothPixmapTransform, true);
+    QSGSimpleTextureNode* node = static_cast<QSGSimpleTextureNode*>(oldNode);
+    if (!node) {
+        node = new QSGSimpleTextureNode();
+        node->setOwnsTexture(true);
+    }
+
+    if (image.isNull() || width() <= 0 || height() <= 0 || !window()) {
+        node->setTexture(nullptr);
+        node->setRect(QRectF());
+        return node;
+    }
+
+    node->setTexture(window()->createTextureFromImage(image));
 
     const QRectF target(0, 0, width(), height());
     if (m_preserveAspectFit) {
         QSizeF scaled(image.size());
         scaled.scale(target.size(), Qt::KeepAspectRatio);
-        QRectF dst(QPointF(0, 0), scaled);
-        dst.moveCenter(target.center());
-        painter->drawImage(dst, image);
+        QRectF rect(QPointF(0, 0), scaled);
+        rect.moveCenter(target.center());
+        node->setRect(rect);
     } else {
-        painter->drawImage(target, image);
+        node->setRect(target);
     }
+
+    return node;
 }

@@ -2,16 +2,15 @@
 
 #include <QImage>
 #include <QMutex>
-#include <QQuickPaintedItem>
+#include <QQuickItem>
 
-// 把 BiliVideoSurface 收到的视频帧绘制到 QML 场景里（Qt5 下设备不支持 QML VideoOutput）。
-class BiliVideoItem : public QQuickPaintedItem {
+// 把 BiliVideoSurface 收到的视频帧以纹理形式绘制到 QML 场景（Qt5 设备不支持 QML VideoOutput）。
+// 用场景图 TextureNode 直接上传纹理，避免 QQuickPaintedItem 每帧再次栅格化的开销。
+class BiliVideoItem : public QQuickItem {
     Q_OBJECT
     Q_PROPERTY(bool preserveAspectFit READ preserveAspectFit WRITE setPreserveAspectFit)
 public:
     explicit BiliVideoItem(QQuickItem* parent = nullptr);
-
-    void paint(QPainter* painter) override;
 
     bool preserveAspectFit() const { return m_preserveAspectFit; }
     void setPreserveAspectFit(bool v) { m_preserveAspectFit = v; }
@@ -19,6 +18,9 @@ public:
 public slots:
     void setFrame(const QImage& image);
     void clearFrame();
+
+protected:
+    QSGNode* updatePaintNode(QSGNode* oldNode, UpdatePaintNodeData* data) override;
 
 private:
     QImage m_image;
