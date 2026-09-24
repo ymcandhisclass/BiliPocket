@@ -38,7 +38,7 @@ Item {
 
     // 进度拖拽
     property bool isSeeking: false
-    property qint64 seekPosition: 0
+    property real seekPosition: 0
 
     // 双击检测
     property int lastTapTime: 0
