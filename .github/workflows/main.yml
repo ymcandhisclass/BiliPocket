@@ -211,6 +211,24 @@ jobs:
             /tmp/moc_err.log
           retention-days: 7
 
+      - name: Publish plugin zip to ci-artifact branch
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 把产物推到 ci-artifact 分支，便于自动化直接 raw 下载（artifact 需要登录）
+          #   https://raw.githubusercontent.com/<owner>/<repo>/ci-artifact/bili_plugin.zip
+          mkdir -p /tmp/ciart
+          cp bili_plugin.zip /tmp/ciart/bili_plugin.zip
+          cd /tmp/ciart
+          git init -q
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+          git checkout -q -b ci-artifact
+          git add -A
+          git commit -qm "ci: bili_plugin.zip ${GITHUB_SHA}"
+          git push -q --force "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-artifact
+
       - name: Publish aarch64 failure log to ci-log branch
         if: failure()
         env:
