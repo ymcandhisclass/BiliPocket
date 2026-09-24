@@ -150,6 +150,24 @@ bool BiliVideoSurface::present(const QVideoFrame& frame) {
             image = QImage(f.bits(), f.width(), f.height(), f.bytesPerLine(), imgFmt).copy();
         }
     }
+
+    // 调试开关：插件目录下存在 dump_frames.flag 时，把首帧的原始 NV12 与转换结果各存一份
+    // （用于离线核对色度平面布局；正常使用时不产生任何 IO）
+    static bool frameDumped = false;
+    if (!frameDumped &&
+        QFile::exists(QStringLiteral("/userdisk/PenMods/plugins/bili_plugin/dump_frames.flag"))) {
+        frameDumped = true;
+        if (f.pixelFormat() == QVideoFrame::Format_NV12 || f.pixelFormat() == QVideoFrame::Format_NV21) {
+            QFile raw(QStringLiteral("/userdisk/PenMods/plugins/bili_plugin/frame_dump_nv12.raw"));
+            if (raw.open(QIODevice::WriteOnly)) {
+                raw.write(reinterpret_cast<const char*>(f.bits()), qint64(f.mappedBytes()));
+                raw.close();
+            }
+        }
+        if (!image.isNull())
+            image.save(QStringLiteral("/userdisk/PenMods/plugins/bili_plugin/frame_dump_rgb.png"), "PNG");
+    }
+
     f.unmap();
 
     if (image.isNull())
