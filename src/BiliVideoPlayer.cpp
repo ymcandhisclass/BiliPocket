@@ -77,14 +77,20 @@ BiliVideoPlayer::BiliVideoPlayer(QObject* parent)
     m_bufferTimer = new QTimer(this);
     m_bufferTimer->setInterval(500);
     connect(m_bufferTimer, &QTimer::timeout, this, &BiliVideoPlayer::updateBufferingProgress);
+
+    // 扬声器通路由宿主侧的音频会话管理：笔自带的音量面板 / 语音播放会把会话切走，
+    // 有可能顺带把通路关掉。播放期间定期重申 Open（幂等）做兜底。
+    m_audioKeepAliveTimer = new QTimer(this);
+    m_audioKeepAliveTimer->setInterval(30000);
+    connect(m_audioKeepAliveTimer, &QTimer::timeout, this, [this]() {
+        if (m_audioOutputHeld)
+            biliAudioOutputRpc("Open");
+    });
 }
 
 BiliVideoPlayer::~BiliVideoPlayer() {
     // 页面销毁时释放音频通路（否则扬声器一直停在 SPK，白耗电）
-    if (m_audioOutputHeld) {
-        m_audioOutputHeld = false;
-        biliReleaseAudioOutput();
-    }
+    releaseAudioOutputIfHeld();
 }
 
 void BiliVideoPlayer::setSource(const QUrl& url) {
@@ -100,6 +106,7 @@ void BiliVideoPlayer::play() {
     if (!m_audioOutputHeld) {
         m_audioOutputHeld = true;
         biliAcquireAudioOutput();
+        if (m_audioKeepAliveTimer) m_audioKeepAliveTimer->start();
     }
     m_player->play();
 }
@@ -118,6 +125,7 @@ void BiliVideoPlayer::releaseAudioOutputIfHeld() {
     if (!m_audioOutputHeld)
         return;
     m_audioOutputHeld = false;
+    if (m_audioKeepAliveTimer) m_audioKeepAliveTimer->stop();
     biliReleaseAudioOutput();
 }
 

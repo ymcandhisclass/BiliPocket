@@ -88,6 +88,7 @@ private:
     QVideoSink* m_videoSink = nullptr;
 #endif
     QTimer* m_bufferTimer = nullptr;
+    QTimer* m_audioKeepAliveTimer = nullptr;
     bool m_hasVideo = false;
     bool m_audioOutputHeld = false;
 };
