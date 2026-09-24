@@ -1,4 +1,5 @@
 #include "BiliVideoPlayer.h"
+#include "BiliVideoSurface.h"
 #include <QDebug>
 
 BiliVideoPlayer::BiliVideoPlayer(QObject* parent)
@@ -16,6 +17,11 @@ BiliVideoPlayer::BiliVideoPlayer(QObject* parent)
 #else
     m_player->setVolume(100);
     connect(m_player, &QMediaPlayer::stateChanged, this, &BiliVideoPlayer::onStateChanged);
+    // 设备的 QML VideoOutput 拿不到帧（厂商 GStreamer 只会用 waylandsink 浮层），
+    // 这里用自定义 QAbstractVideoSurface 接管解码帧，再交给 BiliVideoItem 绘制。
+    m_surface = new BiliVideoSurface(this);
+    m_player->setVideoOutput(m_surface);
+    connect(m_surface, &BiliVideoSurface::frameReady, this, &BiliVideoPlayer::videoFrameReady);
 #endif
 
     connect(m_player, &QMediaPlayer::positionChanged, this, &BiliVideoPlayer::onPositionChanged);

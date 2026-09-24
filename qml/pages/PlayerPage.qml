@@ -86,6 +86,13 @@ Rectangle {
     // 监听播放就绪信号
     Connections {
         target: controller
+        function onPlayUrlChanged() {
+            videoPlayer.dbg("PP playUrlChanged len=" + (controller && controller.playUrl ? controller.playUrl.length : -1)
+                            + " vpSrcLen=" + videoPlayer.sourceUrl.length)
+            if (controller && controller.playUrl && controller.playUrl.length > 0) {
+                videoPlayer.sourceUrl = controller.playUrl
+            }
+        }
         function onPlaybackReady(url) {
             if (!launchRequested || !url || url.length === 0 || !controller) return
             videoPlayer.sourceUrl = url
@@ -94,6 +101,7 @@ Rectangle {
     }
 
     Component.onCompleted: {
+        videoPlayer.dbg("PP completed playUrlLen=" + (controller && controller.playUrl ? controller.playUrl.length : -1))
         if (controller && controller.playUrl && controller.playUrl.length > 0) {
             videoPlayer.sourceUrl = controller.playUrl
         }

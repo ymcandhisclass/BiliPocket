@@ -1,9 +1,12 @@
 #pragma once
 
 #include <QObject>
+#include <QImage>
 #include <QMediaPlayer>
 #include <QUrl>
 #include <QTimer>
+
+class BiliVideoSurface;
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QAudioOutput>
@@ -56,6 +59,7 @@ signals:
     void errorOccurred(const QString& error);
     void mediaStatusChanged(QMediaPlayer::MediaStatus status);
     void bufferingProgressChanged(int progress);
+    void videoFrameReady(const QImage& image);
 
 private slots:
     void onPositionChanged(qint64 pos);
@@ -74,6 +78,7 @@ private slots:
 
 private:
     QMediaPlayer* m_player = nullptr;
+    BiliVideoSurface* m_surface = nullptr;
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     QAudioOutput* m_audioOutput = nullptr;
     QVideoSink* m_videoSink = nullptr;

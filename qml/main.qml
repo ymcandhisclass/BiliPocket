@@ -398,7 +398,11 @@ Rectangle {
                     rootRef: root
                     onBackClicked: root.goBack()
                     onPlayRequested: {
+                        root.dbg("PLAY_REQ quality=" + quality + " hasPlayback=" + (controller && controller.playback ? "1" : "0"));
                         root.playQualitySelected = quality;
+                        if (controller && controller.playback) {
+                            controller.playback.fetchPlayUrl(quality);
+                        }
                         root.navigateTo("player")
                     }
                     onCommentsRequested: root.navigateTo("comments", { bvid: root.detailBvid || controller.videoBvid })
@@ -692,7 +696,25 @@ Rectangle {
         }
     }
 
+    function dbg(s) {
+        try {
+            if (typeof shell !== "undefined" && shell) {
+                var safe = String(s).replace(/[\r\n]+/g, " ").replace(/[\\$`"'<>&|;]/g, " ");
+                shell.exec("sh -c 'echo \"" + safe + "\" >> /tmp/vpdbg.txt'");
+            }
+        } catch (e) {}
+    }
+
+    Connections {
+        target: controller
+        function onPlayUrlChanged() {
+            root.dbg("PLAYURL len=" + (controller.playUrl ? controller.playUrl.length : -1)
+                     + " url=" + (controller.playUrl ? controller.playUrl.substring(0, 80) : ""));
+        }
+    }
+
     Component.onCompleted: {
+        dbg("MAIN completed w=" + width + " h=" + height)
         // 屏幕适配：按实际高度缩放设计稿（2代 320x170→s=1，3代 800x254→s≈1.49）
         Theme.screenW = width
         Theme.screenH = height

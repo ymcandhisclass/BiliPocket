@@ -13,6 +13,7 @@
 #include "modules/video/BiliVideoModule.h"
 #include "modules/viewer/BiliViewerModule.h"
 #include "BiliVideoPlayer.h"
+#include "BiliVideoItem.h"
 
 #include <QVariantMap>
 
@@ -1094,6 +1095,7 @@ void init_plugin() {
   qmlRegisterType<FavoriteFolderModel>("BiliPlugin", 1, 0, "FavoriteFolderModel");
   qmlRegisterType<UpSeasonListModel>("BiliPlugin", 1, 0, "UpSeasonListModel");
   qmlRegisterType<BiliVideoPlayer>("BiliPlugin", 1, 0, "BiliVideoPlayer");
+  qmlRegisterType<BiliVideoItem>("BiliPlugin", 1, 0, "BiliVideoItem");
 
   // 同步拉起 Go（见 bili_startApiServerSync 注释）。
   // 这里绝不能碰 BiliNetwork：

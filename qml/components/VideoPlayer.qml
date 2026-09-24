@@ -17,6 +17,16 @@ Item {
     signal playbackStarted()
     signal playbackFinished()
 
+    // 调试输出到 /tmp/vpdbg.txt（宿主会过滤插件 console.log，故走 shell）
+    function dbg(s) {
+        try {
+            if (typeof shell !== "undefined" && shell) {
+                var safe = String(s).replace(/[\r\n]+/g, " ").replace(/[\\$`"'<>&|;]/g, " ");
+                shell.exec("sh -c 'echo \"" + safe + "\" >> /tmp/vpdbg.txt'");
+            }
+        } catch (e) {}
+    }
+
     // 缩放/平移状态
     property real scale: 1.0
     property real targetScale: 1.0
@@ -45,11 +55,18 @@ Item {
     property real lastTapX: 0
     property real lastTapY: 0
 
+    // 是否收到过首帧
+    property bool _firstFrame: false
+
     // 内部播放器
     BiliVideoPlayer {
         id: mediaPlayer
-        onErrorOccurred: videoPlayer.errorOccurred(error)
+        onErrorOccurred: {
+            videoPlayer.dbg("BTN ERR=" + error)
+            videoPlayer.errorOccurred(error)
+        }
         onMediaStatusChanged: {
+            videoPlayer.dbg("BTN MS=" + status)
             if (status === QMediaPlayer.LoadedMedia || status === QMediaPlayer.BufferedMedia) {
                 mediaPlayer.setPlaybackRate(videoPlayer.initialPlaybackRate)
                 videoPlayer.playbackStarted()
@@ -59,16 +76,24 @@ Item {
         }
     }
 
-    // 视频输出 - 填满整个区域
-    VideoOutput {
+    // 视频输出 - 自绘（设备 QML VideoOutput 拿不到帧，改用 C++ 接管的帧）
+    BiliVideoItem {
         id: videoOutput
         anchors.fill: parent
-        source: mediaPlayer.outputSource
-        fillMode: VideoOutput.PreserveAspectFit
         transform: [
             Translate { x: videoPlayer.panX; y: videoPlayer.panY },
             Scale { xScale: videoPlayer.scale; yScale: videoPlayer.scale }
         ]
+        Connections {
+            target: mediaPlayer
+            function onVideoFrameReady(image) {
+                videoOutput.setFrame(image)
+                if (!videoPlayer._firstFrame) {
+                    videoPlayer._firstFrame = true
+                    videoPlayer.dbg("FIRST FRAME")
+                }
+            }
+        }
     }
 
     // 缩放/平移动画
@@ -498,12 +523,16 @@ Item {
 
     // 响应 sourceUrl 变化
     onSourceUrlChanged: {
+        dbg("SRC changed len=" + sourceUrl.length + " url=" + sourceUrl.substring(0, 90))
         if (sourceUrl) {
             mediaPlayer.setSource(sourceUrl)
         }
     }
 
     Component.onCompleted: {
+        dbg("COMPLETED srcLen=" + sourceUrl.length + " autoPlay=" + autoPlay
+            + " outputSource=" + (mediaPlayer.outputSource ? "obj" : "null")
+            + " w=" + width + " h=" + height)
         if (sourceUrl && autoPlay) {
             mediaPlayer.setSource(sourceUrl)
         }
