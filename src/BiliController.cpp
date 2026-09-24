@@ -611,6 +611,28 @@ static const QString API_SERVER_EXEC = "server"; // Go 编译的可执行文件�
 
 namespace {
 
+// 统一配置 Go 服务进程。
+//
+// 关键：把 stdout/stderr 重定向到文件，而不是让 QProcess 开管道。
+// 宿主进程重启/崩溃后，PenMods 会重新加载插件，而插件发现端口已通就"复用"
+// 上一个宿主遗留的 server —— 那个 server 的 stdout 管道已经随旧宿主一起断裂，
+// 而 Go 在写 fd 1/2 遇到 EPIPE 时会收到 SIGPIPE 并**直接退出**（默认行为）。
+// 于是"复用中的 server"只要写一条 WARN/ERROR 日志就会静默死掉，表现出来就是
+// 插件所有请求突然全部失败（拖动进度条触发媒体流中断正好会写这样一条日志）。
+// 重定向到文件后管道永不断裂，日志还能留下来排查问题。
+void configureApiServerProcess(QProcess *proc) {
+  if (!proc) return;
+  proc->setWorkingDirectory(API_SERVER_PATH);
+
+  const QString logPath = API_SERVER_PATH + QStringLiteral("server.log");
+  QFile logFile(logPath);
+  if (logFile.exists() && logFile.size() > 512 * 1024) {
+    logFile.remove();
+  }
+  proc->setStandardOutputFile(logPath, QIODevice::Append);
+  proc->setStandardErrorFile(logPath, QIODevice::Append);
+}
+
 // terminate 后由 finished -> deleteLater 回收；3 秒后外部 shell 兜底 SIGKILL
 void detachAndStopProcess(QProcess *proc) {
   if (!proc) return;
@@ -679,6 +701,29 @@ public:
       }
       killExistingThenLaunch();
     });
+  }
+
+  // 保活：宿主重启/插件重载后复用的 server 有可能因为断管、被误杀等原因退出，
+  // 而插件没有任何重拉机制 —— 表现出来就是"用着用着所有请求全部失败"。
+  // 这里定期探测端口，连续两次探不到才重启（避免偶发抖动打断正在进行的播放）。
+  void startWatchdog() {
+    if (m_watchdog) return;
+    m_watchdog = new QTimer(this);
+    m_watchdog->setInterval(WATCHDOG_INTERVAL_MS);
+    connect(m_watchdog, &QTimer::timeout, this, [this]() {
+      if (m_busy) return;
+      probeAlive([this](bool alive) {
+        if (alive) {
+          m_missCount = 0;
+          return;
+        }
+        if (++m_missCount < WATCHDOG_MISS_LIMIT) return;
+        m_missCount = 0;
+        qWarning() << "BiliPlugin: API server unreachable, restarting it";
+        start(true, nullptr);
+      });
+    });
+    m_watchdog->start();
   }
 
 private:
@@ -796,7 +841,7 @@ private:
     }
 
     s_apiServerProcess = new QProcess();
-    s_apiServerProcess->setWorkingDirectory(API_SERVER_PATH);
+    configureApiServerProcess(s_apiServerProcess);
     m_launched = true;
 
     QObject::connect(
@@ -897,12 +942,17 @@ private:
   // 等旧进程释放端口：go 的优雅关闭上限 10s
   static constexpr int PORT_WAIT_MAX = 40;
   static constexpr int PORT_WAIT_INTERVAL_MS = 250;
+  // 保活探测：15s 一次，连续 2 次探不到（约 30s）才判定掉线并重启
+  static constexpr int WATCHDOG_INTERVAL_MS = 15000;
+  static constexpr int WATCHDOG_MISS_LIMIT = 2;
 
   bool m_busy = false;
   bool m_launched = false;
   int m_attempt = 0;
   int m_pollCount = 0;
   int m_portWaitCount = 0;
+  int m_missCount = 0;
+  QTimer *m_watchdog = nullptr;
   DoneCallback m_done;
   QVector<DoneCallback> m_queuedDones;
 };
@@ -1001,7 +1051,7 @@ bool bili_startApiServerSync() {
   }
 
   s_apiServerProcess = new QProcess();
-  s_apiServerProcess->setWorkingDirectory(API_SERVER_PATH);
+  configureApiServerProcess(s_apiServerProcess);
 
   QObject::connect(
       s_apiServerProcess, &QProcess::readyReadStandardOutput, []() {
@@ -1130,6 +1180,9 @@ void attach_engine(QQmlEngine *engine) {
     s_imageProvider = new BiliImageProvider(network);
 
     s_engine->addImageProvider("bili", s_imageProvider);
+
+    // attach_engine 在 GUI 线程执行，这里才有可用的事件循环，适合挂保活探测
+    serverManager()->startWatchdog();
 
     qDebug() << "BiliPlugin: Engine attached, ImageProvider registered";
   }

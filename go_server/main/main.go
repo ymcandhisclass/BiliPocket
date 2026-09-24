@@ -41,6 +41,21 @@ func printEndpoints(host, port string) {
 }
 
 func main() {
+	// 关键：接管 SIGPIPE。
+	//
+	// 插件侧的宿主进程重启后，插件会复用上一个宿主遗留的 server —— 它的 stdout
+	// 管道已随旧宿主断裂。Go 运行时对 fd 1/2 的写失败会主动 raise SIGPIPE 并按
+	// 默认行为**终止进程**，也就是"写一条日志就把服务写死"（拖动进度条触发媒体流
+	// 中断正好会写这样一条 WARN）。调用 Notify 之后 SIGPIPE 只会进 channel，
+	// 写操作返回 EPIPE，服务继续存活。
+	sigpipe := make(chan os.Signal, 1)
+	signal.Notify(sigpipe, syscall.SIGPIPE)
+	go func() {
+		for range sigpipe {
+			// 有意丢弃：日志写失败不应影响服务
+		}
+	}()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8000"

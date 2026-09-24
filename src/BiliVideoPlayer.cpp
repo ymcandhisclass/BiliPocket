@@ -1,6 +1,49 @@
 #include "BiliVideoPlayer.h"
 #include "BiliVideoSurface.h"
+
 #include <QDebug>
+#include <QFileInfo>
+#include <QProcess>
+
+namespace {
+
+// 设备（有道词典笔 YDP03X）的扬声器通路不是随 PCM 数据自动打开的：
+// 默认 PCM 只是把数据写进 ALSA loopback，而 loopback → 扬声器这一段由
+// eq_drc_process 通过 ubus 控制 —— 只有调用 eq_drc_process.output.rpc 的
+// "Open" 之后 Playback Path 才会从 OFF 变成 SPK（实测：不调用则完全无声，
+// 调用后同样的数据立刻能听到）。词典笔自带播放器也是开始播放前 Open、
+// 结束后 Close。这里按引用计数成对调用，避免多实例互相把通路关掉。
+int s_audioOutputRefs = 0;
+
+void biliAudioOutputRpc(const char* action) {
+  const QString program = QStringLiteral("/usr/bin/ubus");
+  // 桌面/CI 环境没有 ubus，静默跳过，保证插件在其它平台也能加载
+  if (!QFileInfo::exists(program))
+    return;
+
+  QProcess::startDetached(
+      program,
+      QStringList() << QStringLiteral("call")
+                    << QStringLiteral("eq_drc_process.output.rpc")
+                    << QStringLiteral("control")
+                    << QStringLiteral("{\"action\":\"%1\"}").arg(QLatin1String(action)));
+}
+
+void biliAcquireAudioOutput() {
+  if (s_audioOutputRefs++ == 0)
+    biliAudioOutputRpc("Open");
+}
+
+void biliReleaseAudioOutput() {
+  if (s_audioOutputRefs <= 0) {
+    s_audioOutputRefs = 0;
+    return;
+  }
+  if (--s_audioOutputRefs == 0)
+    biliAudioOutputRpc("Close");
+}
+
+} // namespace
 
 BiliVideoPlayer::BiliVideoPlayer(QObject* parent)
     : QObject(parent)
@@ -36,7 +79,13 @@ BiliVideoPlayer::BiliVideoPlayer(QObject* parent)
     connect(m_bufferTimer, &QTimer::timeout, this, &BiliVideoPlayer::updateBufferingProgress);
 }
 
-BiliVideoPlayer::~BiliVideoPlayer() = default;
+BiliVideoPlayer::~BiliVideoPlayer() {
+    // 页面销毁时释放音频通路（否则扬声器一直停在 SPK，白耗电）
+    if (m_audioOutputHeld) {
+        m_audioOutputHeld = false;
+        biliReleaseAudioOutput();
+    }
+}
 
 void BiliVideoPlayer::setSource(const QUrl& url) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -44,19 +93,32 @@ void BiliVideoPlayer::setSource(const QUrl& url) {
 #else
     m_player->setMedia(url);
 #endif
-    m_player->play();
+    play();
 }
 
 void BiliVideoPlayer::play() {
+    if (!m_audioOutputHeld) {
+        m_audioOutputHeld = true;
+        biliAcquireAudioOutput();
+    }
     m_player->play();
 }
 
 void BiliVideoPlayer::pause() {
     m_player->pause();
+    releaseAudioOutputIfHeld();
 }
 
 void BiliVideoPlayer::stop() {
     m_player->stop();
+    releaseAudioOutputIfHeld();
+}
+
+void BiliVideoPlayer::releaseAudioOutputIfHeld() {
+    if (!m_audioOutputHeld)
+        return;
+    m_audioOutputHeld = false;
+    biliReleaseAudioOutput();
 }
 
 void BiliVideoPlayer::setPosition(qint64 ms) {
@@ -76,9 +138,9 @@ void BiliVideoPlayer::togglePlayPause() {
 #else
     if (m_player->state() == QMediaPlayer::PlayingState) {
 #endif
-        m_player->pause();
+        pause();
     } else {
-        m_player->play();
+        play();
     }
 }
 
@@ -162,12 +224,17 @@ void BiliVideoPlayer::onStateChanged(QMediaPlayer::State state) {
 #endif
 
 void BiliVideoPlayer::onMediaStatusChanged(QMediaPlayer::MediaStatus status) {
+    if (status == QMediaPlayer::EndOfMedia || status == QMediaPlayer::InvalidMedia ||
+        status == QMediaPlayer::NoMedia) {
+        releaseAudioOutputIfHeld();
+    }
     emit mediaStatusChanged(status);
 }
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 void BiliVideoPlayer::onErrorOccurred(QMediaPlayer::Error error, const QString& errorString) {
     Q_UNUSED(error);
+    releaseAudioOutputIfHeld();
     emit errorOccurred(errorString);
 }
 

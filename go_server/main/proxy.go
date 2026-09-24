@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 )
@@ -11,6 +12,83 @@ import (
 // isHTTPURL 判断是否为可代理的 http(s) 地址。
 func isHTTPURL(raw string) bool {
 	return strings.HasPrefix(raw, "http://") || strings.HasPrefix(raw, "https://")
+}
+
+// isPcdnURL 判断是否为 B 站 PCDN / 多 CDN 节点。
+// 这类节点（*.mcdn.bilivideo.*、*.mountaintoys.cn 等）由第三方 P2P 网络提供，
+// 笔上实测带宽抖动很大，playbin 会反复 rebuffer（表现为播放卡顿），
+// 因此优先选标准 upos CDN 地址。
+func isPcdnURL(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return false
+	}
+	h := strings.ToLower(u.Hostname())
+	return strings.Contains(h, "mcdn") || strings.Contains(h, "pcdn") ||
+		strings.HasSuffix(h, "mountaintoys.cn")
+}
+
+// urlPreference 越小越优先：标准 CDN(0) < 其它(1) < PCDN(2)
+func urlPreference(raw string) int {
+	if isPcdnURL(raw) {
+		return 2
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		return 1
+	}
+	h := strings.ToLower(u.Hostname())
+	if strings.Contains(h, "upos-") || strings.Contains(h, "bilivideo.com") ||
+		strings.Contains(h, "bilivideo.cn") {
+		return 0
+	}
+	return 1
+}
+
+// preferDirectCDNURLs 把每个 durl 条目里最优的地址挪到 "url"，
+// 其余按优先级写回 "backup_url"（主地址失败时客户端仍会回退）。
+func preferDirectCDNURLs(resp map[string]interface{}) {
+	data, ok := resp["data"].(map[string]interface{})
+	if !ok {
+		return
+	}
+	durl, ok := data["durl"].([]interface{})
+	if !ok {
+		return
+	}
+
+	for _, e := range durl {
+		entry, ok := e.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		candidates := make([]string, 0, 4)
+		if mainURL, ok := entry["url"].(string); ok && mainURL != "" {
+			candidates = append(candidates, mainURL)
+		}
+		if arr, ok := entry["backup_url"].([]interface{}); ok {
+			for _, v := range arr {
+				if s, ok := v.(string); ok && s != "" {
+					candidates = append(candidates, s)
+				}
+			}
+		}
+		if len(candidates) < 2 {
+			continue
+		}
+
+		sort.SliceStable(candidates, func(i, j int) bool {
+			return urlPreference(candidates[i]) < urlPreference(candidates[j])
+		})
+
+		entry["url"] = candidates[0]
+		backups := make([]interface{}, 0, len(candidates)-1)
+		for _, u := range candidates[1:] {
+			backups = append(backups, u)
+		}
+		entry["backup_url"] = backups
+	}
 }
 
 // isLocalURL 判断是否已经是指向本机的地址（无需再代理）。

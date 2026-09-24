@@ -77,6 +77,10 @@ private slots:
     void updateBufferingProgress();
 
 private:
+    // 设备扬声器通路需要按 eq_drc_process 的 ubus 协议显式 Open/Close，
+    // 这里记录本实例是否已持有，保证成对释放
+    void releaseAudioOutputIfHeld();
+
     QMediaPlayer* m_player = nullptr;
     BiliVideoSurface* m_surface = nullptr;
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -85,4 +89,5 @@ private:
 #endif
     QTimer* m_bufferTimer = nullptr;
     bool m_hasVideo = false;
+    bool m_audioOutputHeld = false;
 };

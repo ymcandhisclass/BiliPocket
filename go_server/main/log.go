@@ -70,6 +70,9 @@ func asyncLogWriter() {
 	ticker := time.NewTicker(asyncLogFlushInterval)
 	defer ticker.Stop()
 
+	// stdout 断管（宿主重启后复用旧 server）时不再重试，避免每条日志都浪费一次写系统调用
+	stdoutBroken := false
+
 	writeDropped := func() {
 		if dropped := asyncLogDropped.Swap(0); dropped > 0 {
 			_, _ = fmt.Fprintf(writer, "%s[WARN]%s %s%s%s 日志队列已满，丢弃 %d 条日志\n",
@@ -78,16 +81,26 @@ func asyncLogWriter() {
 	}
 
 	writeLine := func(line string) {
+		if stdoutBroken {
+			return
+		}
 		writeDropped()
 		_, _ = writer.WriteString(line)
 		if writer.Buffered() >= asyncLogFlushSize {
-			_ = writer.Flush()
+			if err := writer.Flush(); err != nil {
+				stdoutBroken = true
+			}
 		}
 	}
 
 	flush := func() {
+		if stdoutBroken {
+			return
+		}
 		writeDropped()
-		_ = writer.Flush()
+		if err := writer.Flush(); err != nil {
+			stdoutBroken = true
+		}
 	}
 
 	for {
