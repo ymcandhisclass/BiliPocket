@@ -7,7 +7,7 @@
 
 // 接收 QMediaPlayer 解码出的视频帧，转成 QImage 后发给 QML 渲染。
 // 设备上的 GStreamer 只会用 waylandsink（独立浮层），无法渲染进 QML VideoOutput，
-// 因此这里用 QAbstractVideoSurface 自己接管帧，再交给 QQuickPaintedItem 绘制。
+// 因此这里用 QAbstractVideoSurface 自己接管帧，再交给 BiliVideoItem 绘制。
 class BiliVideoSurface : public QAbstractVideoSurface {
     Q_OBJECT
 public:
