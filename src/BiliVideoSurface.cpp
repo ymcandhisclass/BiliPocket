@@ -30,20 +30,22 @@ void logFrameLayoutOnce(const QVideoFrame& frame, int alignedH, qint64 uvOffset)
     file.write("\n");
 }
 
-inline int clamp8(int v) {
-    return v < 0 ? 0 : (v > 255 ? 255 : v);
+// 查表钳位：避免分支，索引 = (value >> 8) + 256，覆盖 -256..511
+static const quint8* clampLut() {
+    static quint8 lut[1024];
+    static bool init = false;
+    if (!init) {
+        for (int i = 0; i < 1024; ++i) {
+            int v = i - 256;
+            lut[i] = quint8(v < 0 ? 0 : (v > 255 ? 255 : v));
+        }
+        init = true;
+    }
+    return lut;
 }
 
-// NV12/NV21 → RGB32（BT.709 有限范围，定点运算）。
-//
-// 为什么不交给 GStreamer 的 videoconvert：设备上实测 NV12→RGB 只有
-// 640x360 @ 7.5fps（解码单独有 86fps），是画面卡顿的真正原因；
-// 而我们自己这份整数实现单帧只要 1~2ms，可以直接吃解码器的 NV12 输出，
-// 从而把 videoconvert 从管道里彻底去掉。
-//
-// 注意 UV 平面偏移：设备上 Rockchip MPP 解码器输出的 NV12 缓冲按 16 行对齐
-// （640x360 的实际 ver_stride 是 368，整帧 471040 = 640x368x2 字节），
-// 直接按 stride*height 取 UV 会错位 8 行色度 —— 表现为画面出现绿/紫摩纹。
+// NV12/NV21 → RGB32（BT.709 有限范围，整数定点）。
+// 实测 640x360 仅需 2ms，远快于 GStreamer videoconvert (7.5fps → ~130ms/帧)
 QImage convertNv12ToRgb32(const QVideoFrame& frame, bool uvSwapped) {
     const int w = frame.width();
     const int h = frame.height();
@@ -52,35 +54,31 @@ QImage convertNv12ToRgb32(const QVideoFrame& frame, bool uvSwapped) {
     if (!base || w <= 0 || h <= 0 || stride <= 0)
         return QImage();
 
-    const uchar* yPlane = base;
+    const quint8* lut = clampLut();
 
-    // 垂直对齐到 16 行；并用 mappedBytes() 兜底校验，避免越界读
-    const int alignedH = (h + 15) & ~15;
+    // UV 平面偏移：优先按 16 行对齐；越界则退回紧凑布局
     const qint64 uvRows = (h + 1) / 2;
-    qint64 uvOffset = qint64(stride) * alignedH;
+    qint64 uvOffset = qint64(stride) * ((h + 15) & ~15);
     if (uvOffset + qint64(stride) * uvRows > frame.mappedBytes())
-        uvOffset = qint64(stride) * h; // 上游是紧凑布局时的兜底
+        uvOffset = qint64(stride) * h;
 
-    const uchar* uvPlane = base + uvOffset;
-    const int uvEvenOffset = uvSwapped ? 1 : 0; // NV21 = V 在前
-    const int uvOddOffset = uvSwapped ? 0 : 1;
-
-    logFrameLayoutOnce(frame, alignedH, uvOffset);
+    logFrameLayoutOnce(frame, uvOffset);
 
     QImage out(w, h, QImage::Format_RGB32);
     if (out.isNull())
         return out;
 
+    const uchar* uvPlane = base + uvOffset;
     for (int j = 0; j < h; ++j) {
-        const uchar* yRow = yPlane + qint64(j) * stride;
+        const uchar* yRow = base + qint64(j) * stride;
         const uchar* uvRow = uvPlane + qint64(j >> 1) * stride;
         QRgb* dst = reinterpret_cast<QRgb*>(out.scanLine(j));
 
         int i = 0;
         for (; i + 1 < w; i += 2) {
             const uchar* uv = uvRow + (i >> 1) * 2;
-            const int u = int(uv[uvEvenOffset]) - 128;
-            const int v = int(uv[uvOddOffset]) - 128;
+            const int u = int(uv[uvSwapped ? 1 : 0]) - 128;
+            const int v = int(uv[uvSwapped ? 0 : 1]) - 128;
             const int rUV = 459 * v;
             const int gUV = -55 * u - 136 * v;
             const int bUV = 541 * u;
@@ -88,19 +86,26 @@ QImage convertNv12ToRgb32(const QVideoFrame& frame, bool uvSwapped) {
             const int y0 = (int(yRow[i]) - 16) * 298;
             const int y1 = (int(yRow[i + 1]) - 16) * 298;
 
-            dst[i] = qRgb(clamp8((y0 + rUV) >> 8), clamp8((y0 + gUV) >> 8),
-                          clamp8((y0 + bUV) >> 8));
-            dst[i + 1] = qRgb(clamp8((y1 + rUV) >> 8), clamp8((y1 + gUV) >> 8),
-                              clamp8((y1 + bUV) >> 8));
+            const uchar* p = reinterpret_cast<uchar*>(&dst[i]);
+            p[0] = lut[((y0 + bUV) >> 8) + 256];
+            p[1] = lut[((y0 + gUV) >> 8) + 256];
+            p[2] = lut[((y0 + rUV) >> 8) + 256];
+            p[3] = 255;
+            p[4] = lut[((y1 + bUV) >> 8) + 256];
+            p[5] = lut[((y1 + gUV) >> 8) + 256];
+            p[6] = lut[((y1 + rUV) >> 8) + 256];
+            p[7] = 255;
         }
         for (; i < w; ++i) {
             const uchar* uv = uvRow + (i >> 1) * 2;
-            const int u = int(uv[uvEvenOffset]) - 128;
-            const int v = int(uv[uvOddOffset]) - 128;
+            const int u = int(uv[uvSwapped ? 1 : 0]) - 128;
+            const int v = int(uv[uvSwapped ? 0 : 1]) - 128;
             const int y = (int(yRow[i]) - 16) * 298;
-            dst[i] = qRgb(clamp8((y + 459 * v) >> 8),
-                          clamp8((y - 55 * u - 136 * v) >> 8),
-                          clamp8((y + 541 * u) >> 8));
+            const uchar* p = reinterpret_cast<uchar*>(&dst[i]);
+            p[0] = lut[((y + 541 * u) >> 8) + 256];
+            p[1] = lut[((y - 55 * u - 136 * v) >> 8) + 256];
+            p[2] = lut[((y + 459 * v) >> 8) + 256];
+            p[3] = 255;
         }
     }
     return out;
