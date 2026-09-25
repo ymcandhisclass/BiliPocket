@@ -32,6 +32,12 @@ void logFrameLayoutOnce(const QVideoFrame& frame, qint64 uvOffset) {
     file.write("\n");
 }
 
+// 检测是否为 YV12 格式（planar Y, V, U）而非 NV12（interleaved Y, UVUV...）
+// 判断方法：如果 UV 偏移处连续两个字节相同，则是 YV12
+static bool isYv12(const uchar* uvPlane) {
+    return uvPlane[0] == uvPlane[1];
+}
+
 QImage convertNv12ToRgb32(const QVideoFrame& frame, bool uvSwapped) {
     const int w = frame.width();
     const int h = frame.height();
@@ -52,6 +58,20 @@ QImage convertNv12ToRgb32(const QVideoFrame& frame, bool uvSwapped) {
         return out;
 
     const uchar* uvPlane = base + uvOffset;
+    
+    // 检测是否为 YV12 格式（planar Y, V, U）而非 NV12（interleaved Y, UVUV...）
+    const bool yv12 = isYv12(uvPlane);
+    const int halfWidth = (w + 1) / 2;
+    const int halfHeight = (h + 1) / 2;
+    const qint64 planeSize = qint64(stride) * halfHeight;
+    
+    // YV12: V 平面在 uvOffset，U 平面在 uvOffset + planeSize
+    // NV12: UV 交织在 uvOffset
+    const uchar* uPlane = yv12 ? uvPlane + planeSize : nullptr;
+    const uchar* vPlane = yv12 ? uvPlane : nullptr;
+    
+    logFrameLayoutOnce(frame, uvOffset);
+    
     for (int j = 0; j < h; ++j) {
         const uchar* yRow = base + qint64(j) * stride;
         const uchar* uvRow = uvPlane + qint64(j >> 1) * stride;
@@ -59,9 +79,19 @@ QImage convertNv12ToRgb32(const QVideoFrame& frame, bool uvSwapped) {
 
         int i = 0;
         for (; i + 1 < w; i += 2) {
-            const uchar* uv = uvRow + (i >> 1) * 2;
-            const int u = int(uv[uvSwapped ? 1 : 0]) - 128;
-            const int v = int(uv[uvSwapped ? 0 : 1]) - 128;
+            int u, v;
+            if (yv12) {
+                // YV12: U 和 V 分开存储
+                const uchar* uRow = uPlane + qint64(j >> 1) * stride;
+                const uchar* vRow = vPlane + qint64(j >> 1) * stride;
+                u = int(uRow[i >> 1]) - 128;
+                v = int(vRow[i >> 1]) - 128;
+            } else {
+                // NV12: UV 交织
+                const uchar* uv = uvRow + (i >> 1) * 2;
+                u = int(uv[uvSwapped ? 1 : 0]) - 128;
+                v = int(uv[uvSwapped ? 0 : 1]) - 128;
+            }
             const int rUV = 459 * v;
             const int gUV = -55 * u - 136 * v;
             const int bUV = 541 * u;
@@ -75,9 +105,17 @@ QImage convertNv12ToRgb32(const QVideoFrame& frame, bool uvSwapped) {
                               clamp8((y1 + bUV) >> 8));
         }
         for (; i < w; ++i) {
-            const uchar* uv = uvRow + (i >> 1) * 2;
-            const int u = int(uv[uvSwapped ? 1 : 0]) - 128;
-            const int v = int(uv[uvSwapped ? 0 : 1]) - 128;
+            int u, v;
+            if (yv12) {
+                const uchar* uRow = uPlane + qint64(j >> 1) * stride;
+                const uchar* vRow = vPlane + qint64(j >> 1) * stride;
+                u = int(uRow[i >> 1]) - 128;
+                v = int(vRow[i >> 1]) - 128;
+            } else {
+                const uchar* uv = uvRow + (i >> 1) * 2;
+                u = int(uv[uvSwapped ? 1 : 0]) - 128;
+                v = int(uv[uvSwapped ? 0 : 1]) - 128;
+            }
             const int y = (int(yRow[i]) - 16) * 298;
             dst[i] = qRgb(clamp8((y + 459 * v) >> 8),
                           clamp8((y - 55 * u - 136 * v) >> 8),
@@ -99,6 +137,7 @@ BiliVideoSurface::supportedPixelFormats(QAbstractVideoBuffer::HandleType handleT
     return QList<QVideoFrame::PixelFormat>()
            << QVideoFrame::Format_NV12
            << QVideoFrame::Format_NV21
+           << QVideoFrame::Format_YV12
            << QVideoFrame::Format_YUV420P
            << QVideoFrame::Format_RGB32
            << QVideoFrame::Format_ARGB32
@@ -121,6 +160,9 @@ bool BiliVideoSurface::present(const QVideoFrame& frame) {
         image = convertNv12ToRgb32(f, false);
     } else if (f.pixelFormat() == QVideoFrame::Format_NV21) {
         image = convertNv12ToRgb32(f, true);
+    } else if (f.pixelFormat() == QVideoFrame::Format_YV12) {
+        // YV12 格式：planar Y, V, U，需要特殊处理
+        image = convertNv12ToRgb32(f, false);  // 使用 YV12 检测逻辑
     } else {
         const QImage::Format imgFmt = QVideoFrame::imageFormatFromPixelFormat(f.pixelFormat());
         if (imgFmt != QImage::Format_Invalid) {
