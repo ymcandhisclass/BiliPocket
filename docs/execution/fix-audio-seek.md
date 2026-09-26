@@ -11,6 +11,26 @@
 | v2 | **拖动进度条后卡死** | 宿主重启后插件会复用上一个宿主遗留的 Go server，其 stdout 管道已随旧宿主断裂。Go 在写 fd 1/2 遇到 EPIPE 时默认 raise SIGPIPE 并**终止进程** —— seek 触发媒体流中断刚好会写一条 `[WARN] 代理媒体中断`，server 随即消失，之后所有请求全部失败 | Go 侧 `signal.Notify(SIGPIPE)` + 日志写失败后停止重试；插件侧把 server 的 stdout/stderr 重定向到 `server.log`（管道永不断裂），并新增 15s 保活探测，连续两次探不到才重启 server |
 | v3 | 播放卡顿 | `playurl` 返回的主地址常是 PCDN 多 CDN 节点（`*.mountaintoys.cn`、`*mcdn*`），笔上实测抖动大，playbin 反复 rebuffer（`gst-launch playbin` 日志可见周期性 `buffering 0% → 100%`） | 服务端 `preferDirectCDNURLs()`：把标准 `upos`/`bilivideo` CDN 地址提到 `url` 位，其余按优先级写回 `backup_url` |
 | v4 | d8cdca8 起**点开视频必崩**（宿主 SIGSEGV，guardian 自动拉起） | 开 core dump 后 gdb 抓到：`Program terminated with signal SIGSEGV`，`si_addr = 0x0`，`#0 QSGSimpleTextureNode::setTexture(QSGTexture*)+108` ← `#1 BiliVideoItem::updatePaintNode()`（崩在 **QSG Render Thread**）。Qt 源码里 `setTexture()` 开头是 `Q_ASSERT(texture)`，随后 `qsgsimpletexturenode_update(..., texture, ...)` 直接解引用——**它不接受 nullptr**；而旧代码在没有帧时调用 `node->setTexture(nullptr)`，`createTextureFromImage()` 返回空时也会 | 首帧到达前/纹理创建失败时**不建节点、不调 setTexture**，直接返回旧节点（`return oldNode`） |
+| v5 | 播放**画面一卡一卡**，但声音流畅（v1~v4 修完后仍存在） | 加统计后发现 `surface fps ≈ 4`、单帧只用 1ms → 瓶颈不在我们的纹理上传。继续拆解管道（把输出写到 /tmp 数帧数）：`mppvideodec` 单独解码 NV12 有 **86fps**，但 `mppvideodec ! videoconvert ! RGB` 只有 **7.5fps**（RGB16 也才 9.2fps）。设备上**没有**硬件色彩转换元素（无 rga/rkvideoconvert），`videoconvert` 是纯软件且慢得离谱 —— 系统播放器走 waylandsink 由硬件转换，所以流畅 | `supportedPixelFormats()` 优先声明 **NV12/NV21/YUV420P**，让管道不再插入 videoconvert；在 `present()` 里用整数定点（BT.709）自己做 YUV→RGB，单帧 1~2ms |
+| v6 | 画面顶部有**绿色条纹**（v5 修完后仍存在） | 分析帧转储发现：设备 MPP 解码器输出的是 **YV12** 格式（planar Y, V, U），而非 NV12（interleaved Y, UVUV...）。我们的代码假设 NV12，但实际数据是 planar Y, V, U，导致色度错位产生绿色条纹 | 通过检测连续两个字节是否相同来区分 YV12/NV12，并分别处理。YV12 格式：V 平面在 uvOffset，U 平面在 uvOffset + planeSize |
+
+### 排查卡顿时有用的量化手段（都无需改代码）
+
+```bash
+# 管道真实吞吐：写到 /tmp 再数字节（注意 /tmp 只有 480MB tmpfs，会写满！先 rm）
+timeout 15 gst-launch-1.0 -q filesrc location=/tmp/v.mp4 ! qtdemux ! h264parse \
+  ! mppvideodec ! video/x-raw,format=NV12 ! filesink location=/tmp/o1.raw
+# 帧数 = 字节 / (width*height*1.5)，fps = 帧数 / 秒数
+
+# videoconvert 单独能力
+timeout 10 gst-launch-1.0 -q videotestsrc num-buffers=100000 \
+  ! video/x-raw,format=NV12,width=640,height=360 ! videoconvert \
+  ! video/x-raw,format=RGB ! filesink location=/tmp/o2.raw
+```
+
+坑：`fpsdisplaysink` 在这套 gst-launch 下不打印 fps（会报 `Padname sink is not unique`），
+`/tmp` 写满后会直接报 `No space left on the resource` 让管道假装“失败”，容易误判。
+插件侧统计见 `video_stats.log`（`surface` = 收到的解码帧，`paint` = 真正上传纹理的帧）。
 
 ## 无声音：证据链
 
