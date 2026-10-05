@@ -38,12 +38,15 @@ inline int clamp8(int v) {
 //
 // 为什么不交给 GStreamer 的 videoconvert：设备上实测 NV12→RGB 只有
 // 640x360 @ 7.5fps（解码单独有 86fps），是画面卡顿的真正原因；
-// 而我们自己这份整数实现单帧只要 1~2ms，可以直接吃解码器的 NV12 输出，
-// 从而把 videoconvert 从管道里彻底去掉。
+// 于是直接吃解码器的 NV12 输出自己转，把 videoconvert 从管道里去掉。
 //
-// 注意 UV 平面偏移：设备上 Rockchip MPP 解码器输出的 NV12 缓冲按 16 行对齐
-// （640x360 的实际 ver_stride 是 368，整帧 471040 = 640x368x2 字节），
-// 直接按 stride*height 取 UV 会错位 8 行色度 —— 表现为画面出现绿/紫摩纹。
+// UV 平面偏移：实测设备给的是**紧凑布局** —— 640x360 时 mappedBytes()=345600
+// （= 640*360*1.5），UV 就在 stride*height 处，下面按 16 行对齐的猜测会被
+// mappedBytes() 兜底否决。仍然是猜测 + 兜底，不是对布局的可靠判断。
+//
+// 已知问题：部分视频画面顶部有绿色条纹。帧转储显示该缓冲的色度平面并非
+// NV12 交织（Y+230400 起连续字节恒定、U 数据在 Y+288000），更接近 YV12
+// planar（Y/V/U）。修复尝试见 docs/execution/fix-audio-seek.md（已回滚）。
 QImage convertNv12ToRgb32(const QVideoFrame& frame, bool uvSwapped) {
     const int w = frame.width();
     const int h = frame.height();
@@ -54,7 +57,8 @@ QImage convertNv12ToRgb32(const QVideoFrame& frame, bool uvSwapped) {
 
     const uchar* yPlane = base;
 
-    // 垂直对齐到 16 行；并用 mappedBytes() 兜底校验，避免越界读
+    // 先按 16 行对齐猜一个 UV 起点；实测设备是紧凑布局，会被下面的
+    // mappedBytes() 校验否决并退回 stride*height（不要删掉这个兜底）
     const int alignedH = (h + 15) & ~15;
     const qint64 uvRows = (h + 1) / 2;
     qint64 uvOffset = qint64(stride) * alignedH;
