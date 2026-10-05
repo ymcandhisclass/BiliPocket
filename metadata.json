@@ -3,7 +3,7 @@
     "name": "笔里哔哩",
     "version": "1.7.4",
     "author": "BiliPocket",
-    "description": "为 320x170 触摸屏设计的哔哩哔哩客户端",
+    "description": "哔哩哔哩客户端，适配二代 320x170 / 三代 800x254 屏幕",
     "icon": "file://userdisk/PenMods/plugins/bili_plugin/icon.png",
     "main_qml": "qml/BiliPlugin/main.qml",
     "main_so": "libbili_plugin.so"
