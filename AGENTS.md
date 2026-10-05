@@ -64,7 +64,7 @@ CI 装的是 go1.21.0 二进制，靠 `GOTOOLCHAIN=auto` 自动切换到 go.mod 
 
 - **屏幕适配**: `Theme.s` 按高度缩放 (二代=1.0, 三代≈1.49)；宽屏再乘 `Theme.sv`（`wide` 时 `s*0.9`），所有尺寸写 `Theme.s * N`
 - **播放格式**: **播放**仅支持 MP4 单流 (`fnval=1`)，不支持 DASH 双流；**下载**支持 DASH 双流 (`fnval=4048`)，由 Go 侧 `/video/merge` 本地合并
-- **QML 类型注册**: 在 `BiliController.cpp` 的 `init_plugin()` 中 `qmlRegisterType`（当前 18 个含 `Q_OBJECT` 的头文件）
+- **QML 类型注册**: 在 `BiliController.cpp` 的 `init_plugin()` 中 `qmlRegisterType`（当前注册 11 个 QML 类型：`BiliController`、各 ListModel、`BiliVideoPlayer`、`BiliVideoItem`；另有 `BiliImageProvider` 走 `addImageProvider`）。`src/` 下含 `Q_OBJECT` 的头文件共 18 个，交叉编译时必须全部生成 moc
 - **插件 ID**: `com.bilipocket.player`，安装路径 `/userdisk/PenMods/plugins/bili_plugin/`
 - **`metadata.json.main_qml`**: `qml/BiliPlugin/main.qml`（模块目录名必须与 `import` 的模块名一致）
 
