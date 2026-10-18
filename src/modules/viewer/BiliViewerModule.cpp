@@ -23,6 +23,27 @@ QString biliViewerImageExtFromUrl(const QString &url) {
   return ".jpg";
 }
 
+// /tmp 是 tmpfs（占内存），查看器会整张保存评论大图，必须设上限，
+// 否则长期使用只增不减；按最旧优先删，近似 LRU。
+constexpr int kViewerImageMaxFiles = 120;
+constexpr qint64 kViewerImageMaxBytes = 24LL * 1024 * 1024;
+
+void pruneViewerImageCache(const QDir &dir) {
+  const QFileInfoList files = dir.entryInfoList(
+      QDir::Files | QDir::NoSymLinks, QDir::Time | QDir::Reversed);
+  qint64 total = 0;
+  for (const QFileInfo &info : files) total += info.size();
+  int count = files.size();
+  for (const QFileInfo &info : files) {
+    if (total <= kViewerImageMaxBytes && count <= kViewerImageMaxFiles)
+      break;
+    if (QFile::remove(info.absoluteFilePath())) {
+      total -= info.size();
+      --count;
+    }
+  }
+}
+
 }  // namespace
 
 BiliViewerModule::BiliViewerModule(BiliController *controller)
@@ -61,6 +82,7 @@ void BiliViewerModule::prepareImageForViewer(const QString &url) {
     emit m_controller->toastMessage("无法创建图片缓存目录");
     return;
   }
+  pruneViewerImageCache(dir);
 
   QByteArray hash = QCryptographicHash::hash(u.toUtf8(), QCryptographicHash::Md5).toHex();
   QString path = dir.absoluteFilePath(QString::fromLatin1(hash) + biliViewerImageExtFromUrl(u));

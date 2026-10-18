@@ -393,8 +393,12 @@ QImage BiliImageResponse::downloadImage(const QString &url) {
 
 void BiliImageResponse::run() {
   // 1. 查缓存
+  // 注意：QCache::object() 并非只读——命中时会把节点 relink 到 LRU 链表头部
+  // （见 Qt 5.15 qcache.h: object() -> relink()），必须用写锁。
+  // 此处若用 QReadLocker，多个解码线程可同时 relink 同一链表，
+  // 造成链表/哈希损坏，随后在 Qt 内部崩溃（已在设备 core 中复现）。
   {
-    QReadLocker locker(m_cacheLock);
+    QWriteLocker locker(m_cacheLock);
     QImage *cached = m_cache->object(m_cacheKey);
     if (cached && !cached->isNull()) {
       m_image = *cached;
