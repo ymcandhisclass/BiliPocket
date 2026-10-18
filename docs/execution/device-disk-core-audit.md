@@ -165,3 +165,12 @@ gdb -batch -nx -ex 'set pagination off' -ex 'bt 8' -ex 'info proc mappings' \
     /oem/YoudaoDictPen/output/YoudaoDictPen /userdisk/corefile/<core>
 # 再用 core 里的 PC 去 info proc mappings 输出里比区间，落到具体 .so
 ```
+
+## 8. 后续：同批部署的修复
+
+清理完成后同日部署了 §4 的两处修复（CI artifact 出自 `e825edf`，`.so` 1600184 字节）：
+
+- 替换方式：SFTP 上传为 `libbili_plugin.so.new` 后 `mv`（运行中的 `.so` 被 mmap，直接覆盖会 ETXTBSY）；
+- 清 QML 缓存后 `kill -9 $(pidof YoudaoDictPen)` 让 guardian 拉起；
+- 结果：新宿主起来后 `/data/applog/DictPen_*.log` 显示 `BiliPlugin: Initializing...` → `Registered successfully!` → `Attaching engine to plugin: com.bilipocket.player`，插件 7 段映射在 `/proc/<pid>/maps` 中；`/userdisk/corefile` 保持 0 个文件，可用空间 5.8 G。
+- 相对上一条已验证的播放基线 `bcf1cd7`，播放/音频/seek 路径代码未变（`git diff bcf1cd7..HEAD -- src` 里 `BiliVideoSurface.*` 只有注释），所以不需要重跑播放验证。
