@@ -79,6 +79,8 @@ CI 装的是 go1.21.0 二进制，靠 `GOTOOLCHAIN=auto` 自动切换到 go.mod 
 - **色彩转换**：设备 `videoconvert` 极慢（640x360 只有 7.5fps），播放链路直接吃 NV12 自行转换；已知部分视频顶部有绿色条纹（YV12 planar 布局未适配，详见 `docs/execution/fix-audio-seek.md`）
 - 宿主会过滤插件的 `qDebug` / QML `console.log`，排查请用文件日志（`server.log` / `video_stats.log` / `/data/applog/DictPen_*.log`）
 - 更新 QML 后清缓存：`rm -rf /.cache/NeteaseYoudao/YoudaoDictPen/qmlcache/*`；重载插件：`kill -9 $(pidof YoudaoDictPen)`（guardian 自动拉起）
+- **磁盘/崩溃转储**：宿主 core 落在 `/userdisk/corefile`（由 `/data/cfg/debug.cfg` 的 `save_core` 控制，`/usr/bin/runDictPen` 每次启动读），单个可达 1GB+；系统的 `check_user_space.sh` 清的是 `/userdata/corefile`（路径写错），永远不会清到。`/userdisk` 只有 8.7G，调试完 core 必须手动删，正常使用保持 `save_core=0`。详见 `docs/execution/device-disk-core-audit.md`
+- **QCache 不是只读**：`QCache::object()` 命中时会 relink LRU 链表，必须用写锁（`QWriteLocker`），读锁并发会破坏链表并在 Qt 内部崩溃
 
 ## Workflow
 
